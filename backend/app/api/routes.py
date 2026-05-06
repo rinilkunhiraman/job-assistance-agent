@@ -1,4 +1,4 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from app.schemas.error import ErrorResponse
 from app.schemas.job import JobRequest, JobResponse
@@ -16,5 +16,6 @@ router = APIRouter()
         502: {"model": ErrorResponse},
     },
 )
-def run_job(req: JobRequest) -> JobResponse:
-    return run_job_pipeline(req)
+def run_job(req: JobRequest, request: Request) -> JobResponse:
+    request_id = getattr(request.state, "request_id", "unknown")
+    return run_job_pipeline(req, request_id=request_id)

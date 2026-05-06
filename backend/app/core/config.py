@@ -32,6 +32,7 @@ def _get_origins(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
 class Settings:
     app_name: str
     app_env: str
+    log_level: str
     cors_origins: tuple[str, ...]
     cors_allow_credentials: bool
     ollama_model: str
@@ -49,6 +50,7 @@ def get_settings() -> Settings:
     return Settings(
         app_name=os.getenv("APP_NAME", "AI Job Copilot API"),
         app_env=os.getenv("APP_ENV", "development"),
+        log_level=os.getenv("LOG_LEVEL", "INFO").upper(),
         cors_origins=_get_origins(
             "CORS_ORIGINS",
             (
@@ -63,7 +65,10 @@ def get_settings() -> Settings:
         ollama_base_url=os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         ),
-        crew_verbose=_get_bool("CREW_VERBOSE", False),
+        crew_verbose=_get_bool(
+            "CREW_VERBOSE",
+            os.getenv("APP_ENV", "development").lower() == "development",
+        ),
         min_resume_chars=_get_int("MIN_RESUME_CHARS", 100),
         min_job_description_chars=_get_int(
             "MIN_JOB_DESCRIPTION_CHARS", 100

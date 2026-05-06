@@ -1,4 +1,6 @@
 import logging
+from time import perf_counter
+from uuid import uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -12,7 +14,7 @@ from app.core.exceptions import AppError
 settings = get_settings()
 
 logging.basicConfig(
-    level=logging.INFO,
+    level=getattr(logging, settings.log_level, logging.INFO),
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 logger = logging.getLogger(__name__)
@@ -30,13 +32,53 @@ app.add_middleware(
 app.include_router(api_router)
 
 
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    request_id = request.headers.get("x-request-id", uuid4().hex[:12])
+    request.state.request_id = request_id
+    started_at = perf_counter()
+
+    logger.info(
+        "request_started request_id=%s method=%s path=%s client=%s",
+        request_id,
+        request.method,
+        request.url.path,
+        request.client.host if request.client else "unknown",
+    )
+
+    try:
+        response = await call_next(request)
+    except Exception:
+        elapsed_ms = round((perf_counter() - started_at) * 1000, 2)
+        logger.exception(
+            "request_failed request_id=%s path=%s duration_ms=%s",
+            request_id,
+            request.url.path,
+            elapsed_ms,
+        )
+        raise
+
+    elapsed_ms = round((perf_counter() - started_at) * 1000, 2)
+    response.headers["X-Request-ID"] = request_id
+    logger.info(
+        "request_completed request_id=%s method=%s path=%s status_code=%s duration_ms=%s",
+        request_id,
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+    )
+    return response
+
+
 @app.exception_handler(AppError)
 async def handle_app_error(
     request: Request,
     exc: AppError,
 ) -> JSONResponse:
     logger.warning(
-        "application_error path=%s code=%s message=%s",
+        "application_error request_id=%s path=%s code=%s message=%s",
+        getattr(request.state, "request_id", "unknown"),
         request.url.path,
         exc.code,
         exc.message,
@@ -53,7 +95,8 @@ async def handle_validation_error(
     exc: RequestValidationError,
 ) -> JSONResponse:
     logger.info(
-        "validation_error path=%s errors=%s",
+        "validation_error request_id=%s path=%s errors=%s",
+        getattr(request.state, "request_id", "unknown"),
         request.url.path,
         exc.errors(),
     )
@@ -72,7 +115,8 @@ async def handle_unexpected_error(
     exc: Exception,
 ) -> JSONResponse:
     logger.exception(
-        "unexpected_error path=%s",
+        "unexpected_error request_id=%s path=%s",
+        getattr(request.state, "request_id", "unknown"),
         request.url.path,
         exc_info=exc,
     )
