@@ -1,27 +1,48 @@
 import json
+import re
 from crewai import Agent, Task, Crew, LLM
 
 from app.schemas.job import JobRequest, JobResponse, Keywords
 
 
 # ---------------------------
-# 🔧 Helper: Safe JSON parsing
+# 🔧 JSON Extraction (Robust)
 # ---------------------------
-def parse_json_safe(text: str):
+def extract_json(text: str):
+    """
+    Extract valid JSON from LLM output, even if wrapped in extra text.
+    """
     try:
         return json.loads(text)
-    except Exception:
-        return {}
+    except:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except:
+                return {}
+    return {}
 
 
 # ---------------------------
-# 🚀 Main Pipeline Function
+# 🔁 Retry Wrapper
+# ---------------------------
+def safe_task_output(task_output: str, retries: int = 2):
+    for _ in range(retries):
+        data = extract_json(task_output)
+        if data:
+            return data
+    return {}
+
+
+# ---------------------------
+# 🚀 Main Pipeline
 # ---------------------------
 def run_job_pipeline(req: JobRequest) -> JobResponse:
 
     # 🔹 LLM (Ollama)
     llm = LLM(
-        model="ollama/gemma",
+        model="ollama/gemma4",
         base_url="http://localhost:11434"
     )
 
@@ -32,20 +53,20 @@ def run_job_pipeline(req: JobRequest) -> JobResponse:
     job_analyzer = Agent(
         role="Job Analyzer",
         goal="Extract structured insights from job descriptions",
-        backstory="Expert in analyzing job postings and extracting key requirements",
+        backstory="Expert in analyzing job postings",
         llm=llm
     )
 
     candidate_profiler = Agent(
         role="Candidate Profiler",
         goal="Analyze resumes and identify strengths",
-        backstory="Expert in evaluating candidate profiles and experience",
+        backstory="Expert in evaluating candidate profiles",
         llm=llm
     )
 
     fit_evaluator = Agent(
         role="Fit Evaluator",
-        goal="Compare candidate profile with job requirements",
+        goal="Compare candidate with job requirements",
         backstory="Expert hiring analyst",
         llm=llm
     )
@@ -58,11 +79,11 @@ def run_job_pipeline(req: JobRequest) -> JobResponse:
     )
 
     outreach_writer = Agent(
-        role="Outreach Writer",
-        goal="Write effective recruiter messages",
-        backstory="Expert in professional communication",
-        llm=llm
-    )
+    role="Candidate Outreach Specialist",
+    goal="Write short, high-conversion messages FROM a candidate TO a recruiter or hiring manager",
+    backstory="Expert in job search communication, helping candidates reach out professionally and confidently",
+    llm=llm
+)
 
     cover_letter_writer = Agent(
         role="Cover Letter Writer",
@@ -72,7 +93,7 @@ def run_job_pipeline(req: JobRequest) -> JobResponse:
     )
 
     # ---------------------------
-    # 📋 Tasks (STRICT JSON OUTPUT)
+    # 📋 Tasks (STRICT JSON)
     # ---------------------------
 
     job_analysis_task = Task(
@@ -105,69 +126,133 @@ Return ONLY valid JSON:
   "skills": []
 }}
 """,
-        expected_output="Candidate profile JSON",
+        expected_output="Profile JSON",
         agent=candidate_profiler
     )
 
     fit_task = Task(
-        description="""
+    description=f"""
 Compare job requirements and candidate profile.
 
+Job Description:
+{req.job_description}
+
+Candidate Resume:
+{req.resume}
+
 Return ONLY valid JSON:
-{
+{{
   "fit_summary": "",
   "matched_skills": [],
   "missing_skills": []
-}
+}}
+
+Instructions:
+- Be realistic, not overly positive
+- Identify actual gaps
+- Highlight strongest matching skills
 """,
-        expected_output="Fit analysis JSON",
-        agent=fit_evaluator
-    )
+    expected_output="Accurate fit analysis",
+    agent=fit_evaluator
+)
 
     resume_task = Task(
-        description="""
-Improve resume based on job requirements.
+    description=f"""
+You are improving a candidate's resume for a specific job.
+
+Job Description:
+{req.job_description}
+
+Candidate Resume:
+{req.resume}
+
+Additional Achievements:
+{req.achievements}
+
+Instructions:
+- Tailor resume content to match job requirements
+- Use keywords from the job description
+- Highlight relevant experience only
+- Make bullet points results-oriented
+- Do NOT invent fake experience
+- Keep it realistic and credible
 
 Return ONLY valid JSON:
-{
+{{
   "resume_improvements": ""
-}
+}}
 """,
-        expected_output="Resume improvements JSON",
-        agent=resume_optimizer
-    )
+    expected_output="Personalized resume improvements",
+    agent=resume_optimizer
+)
 
     outreach_task = Task(
-        description=f"""
-Write a recruiter outreach message.
+    description=f"""
+Write a short outreach message FROM a candidate TO a recruiter.
 
-Role: {req.target_role}
+Job Description:
+{req.job_description}
+
+Candidate Resume:
+{req.resume}
+
+Target Role: {req.target_role}
 Tone: {req.tone}
+
+Instructions:
+- First person (I, my)
+- Mention 1–2 relevant skills or experience
+- Keep it concise (4–6 lines max)
+- Professional and confident
+- Include a soft call to action
 
 Return ONLY valid JSON:
 {{
   "outreach_message": ""
 }}
 """,
-        expected_output="Outreach JSON",
-        agent=outreach_writer
-    )
+    expected_output="Personalized outreach message",
+    agent=outreach_writer
+)
 
     cover_letter_task = Task(
-        description=f"""
-Write a tailored cover letter.
+    description=f"""
+You are writing a tailored cover letter.
 
-Role: {req.target_role}
+Job Description:
+{req.job_description}
+
+Candidate Resume:
+{req.resume}
+
+Target Role: {req.target_role}
 Tone: {req.tone}
+
+Additional Achievements:
+{req.achievements}
+
+Instructions:
+- Personalize strongly to the job
+- Mention specific skills from the job description
+- Reference candidate experience from resume
+- Show why candidate is a strong fit
+- Keep it natural and professional
+- Avoid generic phrases
+
+Structure:
+- Intro (interest in role)
+- Relevant experience
+- Why fit
+- Closing
 
 Return ONLY valid JSON:
 {{
   "cover_letter": ""
 }}
 """,
-        expected_output="Cover letter JSON",
-        agent=cover_letter_writer
-    )
+    expected_output="Highly personalized cover letter",
+    agent=cover_letter_writer
+)
 
     # ---------------------------
     # 🧠 Crew Execution
@@ -194,30 +279,54 @@ Return ONLY valid JSON:
         memory=False
     )
 
-    result = crew.kickoff()
+    try:
+        result = crew.kickoff()
+        task_outputs = result.tasks_output
+    except Exception:
+        return JobResponse(
+            fit_summary="System error occurred.",
+            resume_improvements="",
+            outreach_message="",
+            cover_letter="",
+            keywords=Keywords(matched=[], missing=[])
+        )
 
     # ---------------------------
-    # 📊 Extract Task Outputs
+    # 📊 Parse Outputs Safely
     # ---------------------------
 
-    task_outputs = result.tasks_output
-
-    job_data = parse_json_safe(task_outputs[0].raw)
-    profile_data = parse_json_safe(task_outputs[1].raw)
-    fit_data = parse_json_safe(task_outputs[2].raw)
-    resume_data = parse_json_safe(task_outputs[3].raw)
-    outreach_data = parse_json_safe(task_outputs[4].raw)
-    cover_data = parse_json_safe(task_outputs[5].raw)
+    job_data = safe_task_output(task_outputs[0].raw)
+    profile_data = safe_task_output(task_outputs[1].raw)
+    fit_data = safe_task_output(task_outputs[2].raw)
+    resume_data = safe_task_output(task_outputs[3].raw)
+    outreach_data = safe_task_output(task_outputs[4].raw)
+    cover_data = safe_task_output(task_outputs[5].raw)
 
     # ---------------------------
-    # 📦 Final Structured Response
+    # 📦 Final Response
     # ---------------------------
 
     return JobResponse(
-        fit_summary=fit_data.get("fit_summary", ""),
-        resume_improvements=resume_data.get("resume_improvements", ""),
-        outreach_message=outreach_data.get("outreach_message", ""),
-        cover_letter=cover_data.get("cover_letter", ""),
+        fit_summary=fit_data.get(
+            "fit_summary",
+            "Unable to generate fit summary."
+        ),
+
+        resume_improvements=resume_data.get(
+            "resume_improvements",
+            "No improvements generated."
+        ),
+
+        outreach_message=outreach_data.get(
+            "outreach_message",
+            "Unable to generate outreach message."
+        ),
+
+        cover_letter=cover_data.get(
+            "cover_letter",
+            "Unable to generate cover letter."
+        ),
+
         keywords=Keywords(
             matched=fit_data.get("matched_skills", []),
             missing=fit_data.get("missing_skills", [])
