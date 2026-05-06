@@ -1,15 +1,17 @@
 "use client";
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger
-} from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import type { JobResponse } from "@/lib/job";
 
-export default function JobResult({ data }: any) {
-  if (!data) return null;
+type JobResultProps = {
+  data: JobResponse | null;
+};
+
+export default function JobResult({ data }: JobResultProps) {
+  if (!data) {
+    return null;
+  }
 
   return (
     <Tabs defaultValue="fit" className="mt-6">
@@ -22,8 +24,21 @@ export default function JobResult({ data }: any) {
 
       <TabsContent value="fit">
         <Card>
-          <CardContent className="p-4 whitespace-pre-wrap">
-            {data.fit_summary}
+          <CardContent className="space-y-4 p-4 whitespace-pre-wrap">
+            <div>{data.fit_summary}</div>
+            {(data.keywords.matched.length > 0 ||
+              data.keywords.missing.length > 0) && (
+              <div className="space-y-2">
+                <div>
+                  <span className="font-semibold">Matched keywords:</span>{" "}
+                  {data.keywords.matched.join(", ") || "None"}
+                </div>
+                <div>
+                  <span className="font-semibold">Missing keywords:</span>{" "}
+                  {data.keywords.missing.join(", ") || "None"}
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </TabsContent>

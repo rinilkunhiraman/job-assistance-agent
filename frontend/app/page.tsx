@@ -1,44 +1,59 @@
 "use client";
 
 import { useState } from "react";
+
 import JobForm from "@/components/job/JobForm";
 import JobResult from "@/components/job/JobResult";
+import { ApiError, runJobPipeline } from "@/lib/api";
+import type { JobRequest, JobResponse } from "@/lib/job";
 
 export default function Home() {
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<JobResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const runPipeline = async (form: any) => {
+  const runPipeline = async (payload: JobRequest) => {
     setLoading(true);
     setResult(null);
+    setErrorMessage(null);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/run", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(form)
-      });
-
-      const data = await res.json();
+      const data = await runJobPipeline(payload);
       setResult(data);
-    } catch (err) {
-      setResult({ fit_summary: "Error connecting to backend" });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setErrorMessage(error.message);
+      } else {
+        setErrorMessage(
+          "Unable to connect to the backend. Check that the API is running.",
+        );
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">
-        AI Job Copilot 🚀
-      </h1>
+    <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <h1 className="text-3xl font-bold">AI Job Copilot 🚀</h1>
 
-      <JobForm onSubmit={runPipeline} />
+      <JobForm
+        onSubmit={runPipeline}
+        onError={setErrorMessage}
+        disabled={loading}
+      />
 
-      {loading && <p>Generating results...</p>}
+      {errorMessage && (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessage}
+        </div>
+      )}
+
+      {loading && (
+        <p className="text-sm text-muted-foreground">
+          Generating tailored application materials...
+        </p>
+      )}
 
       <JobResult data={result} />
     </div>
