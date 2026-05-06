@@ -22,6 +22,11 @@ type JobFormProps = {
   onSubmit: (payload: ReturnType<typeof toJobRequest>) => Promise<void>;
 };
 
+const fieldClassName = "min-h-11 rounded-xl px-3 text-sm sm:text-base";
+
+const selectClassName =
+  "border-input bg-background ring-offset-background focus-visible:ring-ring min-h-11 w-full appearance-none rounded-xl border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-base";
+
 export default function JobForm({
   disabled = false,
   onError,
@@ -52,72 +57,121 @@ export default function JobForm({
   };
 
   return (
-    <Card>
-      <CardContent className="p-4">
-        <form className="space-y-4" onSubmit={handleSubmit}>
-          <Textarea
-            name="resume"
-            placeholder="Paste your resume..."
-            value={form.resume}
-            onChange={handleChange}
-            disabled={disabled}
-          />
+    <Card className="overflow-hidden rounded-2xl">
+      <CardContent className="p-4 sm:p-6">
+        <form className="space-y-5" onSubmit={handleSubmit}>
+          <div className="space-y-1">
+            <h2 className="text-xl font-semibold">Application Inputs</h2>
+            <p className="text-sm text-muted-foreground">
+              Paste the full resume and full job description, then choose the
+              tone you want the AI to use.
+            </p>
+          </div>
 
-          <Textarea
-            name="job_description"
-            placeholder="Paste job description..."
-            value={form.job_description}
-            onChange={handleChange}
-            disabled={disabled}
-          />
+          <label htmlFor="resume" className="block space-y-2">
+            <span className="text-sm font-medium">Resume</span>
+            <Textarea
+              id="resume"
+              name="resume"
+              placeholder="Paste the full resume here..."
+              value={form.resume}
+              onChange={handleChange}
+              disabled={disabled}
+              className="min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base"
+            />
+          </label>
 
-          <Input
-            name="target_role"
-            placeholder="Target role"
-            value={form.target_role}
-            onChange={handleChange}
-            disabled={disabled}
-          />
+          <label htmlFor="job_description" className="block space-y-2">
+            <span className="text-sm font-medium">Job description</span>
+            <Textarea
+              id="job_description"
+              name="job_description"
+              placeholder="Paste the full job description here..."
+              value={form.job_description}
+              onChange={handleChange}
+              disabled={disabled}
+              className="min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base"
+            />
+          </label>
 
-          <select
-            name="experience_level"
-            value={form.experience_level}
-            onChange={handleChange}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label htmlFor="target_role" className="block space-y-2">
+              <span className="text-sm font-medium">Target role</span>
+              <Input
+                id="target_role"
+                name="target_role"
+                placeholder="Target role"
+                value={form.target_role}
+                onChange={handleChange}
+                disabled={disabled}
+                className={fieldClassName}
+              />
+            </label>
+
+            <label htmlFor="experience_level" className="block space-y-2">
+              <span className="text-sm font-medium">Experience level</span>
+              <select
+                id="experience_level"
+                name="experience_level"
+                value={form.experience_level}
+                onChange={handleChange}
+                disabled={disabled}
+                className={selectClassName}
+              >
+                <option value="">Select experience level</option>
+                {EXPERIENCE_LEVELS.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <label htmlFor="tone" className="block space-y-2">
+              <span className="text-sm font-medium">Tone</span>
+              <select
+                id="tone"
+                name="tone"
+                value={form.tone}
+                onChange={handleChange}
+                disabled={disabled}
+                className={selectClassName}
+              >
+                <option value="">Select tone</option>
+                {TONES.map((tone) => (
+                  <option key={tone} value={tone}>
+                    {tone}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <div className="hidden sm:block" />
+          </div>
+
+          <label htmlFor="achievements" className="block space-y-2">
+            <span className="text-sm font-medium">
+              Key achievements
+              <span className="ml-1 text-muted-foreground">(optional)</span>
+            </span>
+            <Textarea
+              id="achievements"
+              name="achievements"
+              placeholder="Key achievements, metrics, or wins you want emphasized"
+              value={form.achievements}
+              onChange={handleChange}
+              disabled={disabled}
+              className="min-h-28 resize-y rounded-xl px-3 py-3 text-sm sm:text-base"
+            />
+          </label>
+
+          <Button
+            type="submit"
             disabled={disabled}
-            className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-11 w-full sm:w-auto"
           >
-            <option value="">Select experience level</option>
-            {EXPERIENCE_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-
-          <select
-            name="tone"
-            value={form.tone}
-            onChange={handleChange}
-            disabled={disabled}
-            className="border-input bg-background ring-offset-background focus-visible:ring-ring flex h-10 w-full rounded-md border px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value="">Select tone</option>
-            {TONES.map((tone) => (
-              <option key={tone} value={tone}>
-                {tone}
-              </option>
-            ))}
-          </select>
-
-          <Textarea
-            name="achievements"
-            placeholder="Key achievements (optional)"
-            value={form.achievements}
-            onChange={handleChange}
-            disabled={disabled}
-          />
-
-          <Button type="submit" disabled={disabled}>
             {disabled ? "Generating..." : "Generate"}
           </Button>
         </form>
