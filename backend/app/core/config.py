@@ -61,7 +61,7 @@ def get_settings() -> Settings:
         cors_allow_credentials=_get_bool(
             "CORS_ALLOW_CREDENTIALS", True
         ),
-        ollama_model=os.getenv("OLLAMA_MODEL", "ollama/gemma4"),
+        ollama_model=os.getenv("OLLAMA_MODEL", "ollama/gemma4:31b-cloud"),
         ollama_base_url=os.getenv(
             "OLLAMA_BASE_URL", "http://localhost:11434"
         ),
