@@ -3,6 +3,8 @@ import type { ApiErrorResponse, JobRequest, JobResponse } from "@/lib/job";
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
 
+const REQUEST_TIMEOUT_MS = 600000; // 10 minutes
+
 export class ApiError extends Error {
   code: string;
   status: number;
@@ -18,35 +20,58 @@ export class ApiError extends Error {
 export async function runJobPipeline(
   payload: JobRequest,
 ): Promise<JobResponse> {
-  const response = await fetch(`${API_BASE_URL}/run`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(payload),
-  });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
-  const body = (await response.json().catch(() => null)) as
-    | JobResponse
-    | ApiErrorResponse
-    | null;
+  try {
+    const response = await fetch(`${API_BASE_URL}/run`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    const error =
-      body && "error" in body
-        ? body.error
-        : "The backend returned an unexpected error.";
-    const code = body && "code" in body ? body.code : "unknown_error";
-    throw new ApiError(error, code, response.status);
+    const body = await response.json().catch((err) => {
+      throw new ApiError(
+        `Failed to parse response JSON: ${err instanceof Error ? err.message : "Unknown error"}`,
+        "json_parse_error",
+        response.status,
+      );
+    }) as
+      | JobResponse
+      | ApiErrorResponse
+      | null;
+
+    if (!response.ok) {
+      const error =
+        body && "error" in body
+          ? body.error
+          : "The backend returned an unexpected error.";
+      const code = body && "code" in body ? body.code : "unknown_error";
+      throw new ApiError(error, code, response.status);
+    }
+
+    if (!body || !("fit_summary" in body)) {
+      throw new ApiError(
+        "The backend returned an invalid response payload.",
+        "invalid_response",
+        502,
+      );
+    }
+
+    return body;
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiError(
+        "The request timed out after 60 seconds.",
+        "request_timeout",
+        408,
+      );
+    }
+    throw err;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  if (!body || !("fit_summary" in body)) {
-    throw new ApiError(
-      "The backend returned an invalid response payload.",
-      "invalid_response",
-      502,
-    );
-  }
-
-  return body;
 }
