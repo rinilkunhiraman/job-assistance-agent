@@ -6,17 +6,22 @@ export const TONES = [
   "Direct",
 ] as const;
 
+import { z } from "zod";
+
 export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
 export type Tone = (typeof TONES)[number];
 
-export type JobRequest = {
-  resume: string;
-  job_description: string;
-  target_role: string;
-  experience_level: ExperienceLevel;
-  tone: Tone;
-  achievements?: string;
-};
+export const jobFormSchema = z.object({
+  resume: z.string().min(100, "Resume must be at least 100 characters."),
+  job_description: z.string().min(100, "Job description must be at least 100 characters."),
+  target_role: z.string().min(2, "Target role must be at least 2 characters."),
+  experience_level: z.enum(EXPERIENCE_LEVELS),
+  tone: z.enum(TONES),
+  achievements: z.string().max(4000, "Achievements must be 4000 characters or fewer.").optional().or(z.literal("")),
+});
+
+export type JobRequest = z.infer<typeof jobFormSchema>;
+export type FormState = z.infer<typeof jobFormSchema>;
 
 export type JobResponse = {
   fit_summary: string;
@@ -34,66 +39,20 @@ export type ApiErrorResponse = {
   code: string;
 };
 
-export type FormState = {
-  resume: string;
-  job_description: string;
-  target_role: string;
-  experience_level: string;
-  tone: string;
-  achievements: string;
-};
-
 export function getInitialFormState(): FormState {
   return {
     resume: "",
     job_description: "",
     target_role: "",
-    experience_level: "",
-    tone: "",
+    experience_level: "" as any,
+    tone: "" as any,
     achievements: "",
   };
 }
 
-export function validateJobForm(form: FormState): string | null {
-  const resume = form.resume.trim();
-  const jobDescription = form.job_description.trim();
-  const targetRole = form.target_role.trim();
-  const achievements = form.achievements.trim();
-
-  if (resume.length < 100) {
-    return "Resume must be at least 100 characters.";
-  }
-
-  if (jobDescription.length < 100) {
-    return "Job description must be at least 100 characters.";
-  }
-
-  if (targetRole.length < 2) {
-    return "Target role must be at least 2 characters.";
-  }
-
-  if (!EXPERIENCE_LEVELS.includes(form.experience_level as ExperienceLevel)) {
-    return "Select a valid experience level.";
-  }
-
-  if (!TONES.includes(form.tone as Tone)) {
-    return "Select a valid tone.";
-  }
-
-  if (achievements.length > 4000) {
-    return "Achievements must be 4000 characters or fewer.";
-  }
-
-  return null;
-}
-
 export function toJobRequest(form: FormState): JobRequest {
   return {
-    resume: form.resume.trim(),
-    job_description: form.job_description.trim(),
-    target_role: form.target_role.trim(),
-    experience_level: form.experience_level as ExperienceLevel,
-    tone: form.tone as Tone,
-    achievements: form.achievements.trim() || undefined,
+    ...form,
+    achievements: form.achievements?.trim() || undefined,
   };
 }

@@ -1,19 +1,23 @@
 "use client";
 
-import type { ChangeEvent, FormEvent } from "react";
+import { ChevronDown, ChevronRight } from "lucide-react";
+import type { FormEvent } from "react";
 import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   EXPERIENCE_LEVELS,
   type FormState,
   getInitialFormState,
   TONES,
   toJobRequest,
-  validateJobForm,
+  jobFormSchema,
 } from "@/lib/job";
 
 type JobFormProps = {
@@ -24,36 +28,40 @@ type JobFormProps = {
 
 const fieldClassName = "min-h-11 rounded-xl px-3 text-sm sm:text-base";
 
-const selectClassName =
-  "border-input bg-background ring-offset-background focus-visible:ring-ring min-h-11 w-full appearance-none rounded-xl border px-3 text-sm focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50 sm:text-base";
-
 export default function JobForm({
   disabled = false,
   onError,
   onSubmit,
 }: JobFormProps) {
-  const [form, setForm] = useState<FormState>(getInitialFormState);
+  const {
+    register,
+    handleSubmit: rhSubmit,
+    setValue,
+    watch,
+    formState: { errors },
+  } = useForm<FormState>({
+    resolver: zodResolver(jobFormSchema),
+    defaultValues: getInitialFormState(),
+  });
 
-  const handleChange = (
-    event: ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
+  const [showResume, setShowResume] = useState(true);
+  const [showJobDescription, setShowJobDescription] = useState(true);
+
+  const formValues = watch();
+
+  const onSubmitHandler = async (data: FormState) => {
+    onError(null);
+    await onSubmit(toJobRequest(data));
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    await rhSubmit(onSubmitHandler)();
 
-    const validationError = validateJobForm(form);
-    if (validationError) {
-      onError(validationError);
-      return;
+    if (Object.keys(errors).length > 0) {
+      const firstError = Object.values(errors)[0]?.message || "Please check the form for errors.";
+      onError(firstError as string);
     }
-
-    onError(null);
-    await onSubmit(toJobRequest(form));
   };
 
   return (
@@ -68,84 +76,118 @@ export default function JobForm({
             </p>
           </div>
 
-          <label htmlFor="resume" className="block space-y-2">
-            <span className="text-sm font-medium">Resume</span>
-            <Textarea
-              id="resume"
-              name="resume"
-              placeholder="Paste the full resume here..."
-              value={form.resume}
-              onChange={handleChange}
-              disabled={disabled}
-              className="min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base"
-            />
-          </label>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowResume(!showResume)}
+              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+            >
+              {showResume ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              Resume
+            </button>
+            {showResume && (
+              <Textarea
+                id="resume"
+                {...register("resume")}
+                placeholder="Paste the full resume here..."
+                disabled={disabled}
+                className={`min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
+                  errors.resume ? "border-destructive" : ""
+                }`}
+              />
+            )}
+          </div>
 
-          <label htmlFor="job_description" className="block space-y-2">
-            <span className="text-sm font-medium">Job description</span>
-            <Textarea
-              id="job_description"
-              name="job_description"
-              placeholder="Paste the full job description here..."
-              value={form.job_description}
-              onChange={handleChange}
-              disabled={disabled}
-              className="min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base"
-            />
-          </label>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowJobDescription(!showJobDescription)}
+              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+            >
+              {showJobDescription ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
+              )}
+              Job description
+            </button>
+            {showJobDescription && (
+              <Textarea
+                id="job_description"
+                {...register("job_description")}
+                placeholder="Paste the full job description here..."
+                disabled={disabled}
+                className={`min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
+                  errors.job_description ? "border-destructive" : ""
+                }`}
+              />
+            )}
+          </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label htmlFor="target_role" className="block space-y-2">
               <span className="text-sm font-medium">Target role</span>
               <Input
                 id="target_role"
-                name="target_role"
+                {...register("target_role")}
                 placeholder="Target role"
-                value={form.target_role}
-                onChange={handleChange}
                 disabled={disabled}
-                className={fieldClassName}
+                className={`${fieldClassName} ${
+                  errors.target_role ? "border-destructive" : ""
+                }`}
               />
             </label>
 
             <label htmlFor="experience_level" className="block space-y-2">
               <span className="text-sm font-medium">Experience level</span>
-              <select
-                id="experience_level"
-                name="experience_level"
-                value={form.experience_level}
-                onChange={handleChange}
+              <Select
+                value={formValues.experience_level}
+                onValueChange={(value) => setValue("experience_level", value as any)}
                 disabled={disabled}
-                className={selectClassName}
               >
-                <option value="">Select experience level</option>
-                {EXPERIENCE_LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="experience_level">
+                  <SelectValue placeholder="Select experience level" />
+                </SelectTrigger>
+                <SelectContent>
+                  {EXPERIENCE_LEVELS.map((level) => (
+                    <SelectItem key={level} value={level}>
+                      {level}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.experience_level && (
+                <p className="text-xs text-destructive">{errors.experience_level.message}</p>
+              )}
             </label>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label htmlFor="tone" className="block space-y-2">
               <span className="text-sm font-medium">Tone</span>
-              <select
-                id="tone"
-                name="tone"
-                value={form.tone}
-                onChange={handleChange}
+              <Select
+                value={formValues.tone}
+                onValueChange={(value) => setValue("tone", value as any)}
                 disabled={disabled}
-                className={selectClassName}
               >
-                <option value="">Select tone</option>
-                {TONES.map((tone) => (
-                  <option key={tone} value={tone}>
-                    {tone}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="tone">
+                  <SelectValue placeholder="Select tone" />
+                </SelectTrigger>
+                <SelectContent>
+                  {TONES.map((tone) => (
+                    <SelectItem key={tone} value={tone}>
+                      {tone}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.tone && (
+                <p className="text-xs text-destructive">{errors.tone.message}</p>
+              )}
             </label>
 
             <div className="hidden sm:block" />
@@ -158,13 +200,16 @@ export default function JobForm({
             </span>
             <Textarea
               id="achievements"
-              name="achievements"
+              {...register("achievements")}
               placeholder="Key achievements, metrics, or wins you want emphasized"
-              value={form.achievements}
-              onChange={handleChange}
               disabled={disabled}
-              className="min-h-28 resize-y rounded-xl px-3 py-3 text-sm sm:text-base"
+              className={`min-h-28 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
+                errors.achievements ? "border-destructive" : ""
+              }`}
             />
+            {errors.achievements && (
+              <p className="text-xs text-destructive">{errors.achievements.message}</p>
+            )}
           </label>
 
           <Button
