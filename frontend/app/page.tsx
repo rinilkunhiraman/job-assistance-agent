@@ -1,30 +1,28 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useEffect } from "react";
 
 import JobForm from "@/components/job/JobForm";
 import JobResult from "@/components/job/JobResult";
 import { ApiError, runJobPipeline } from "@/lib/api";
-import type { JobRequest, JobResponse } from "@/lib/job";
+import { useJobStore } from "@/store/useJobStore";
 
 export default function Home() {
-  const [result, setResult] = useState<JobResponse | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const [duration, setDuration] = useState<number | null>(null);
+  const { jobStatus, actions } = useJobStore();
+  const { isPending, duration, result, errorMessage } = jobStatus;
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isPending) {
       const startTime = Date.now();
       interval = setInterval(() => {
-        setDuration(Date.now() - startTime);
+        actions.setDuration(Date.now() - startTime);
       }, 100);
     }
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPending]);
+  }, [isPending, actions]);
 
   const formatDuration = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -36,25 +34,18 @@ export default function Home() {
     return `${seconds}s`;
   };
 
-  const runPipeline = async (payload: JobRequest) => {
-    setResult(null);
-    setErrorMessage(null);
-    setDuration(null);
+  const runPipeline = async (payload: any) => {
+    actions.startJob();
 
-    startTransition(async () => {
-      try {
-        const data = await runJobPipeline(payload);
-        setResult(data);
-      } catch (error) {
-        if (error instanceof ApiError) {
-          setErrorMessage(error.message);
-        } else {
-          setErrorMessage(
-            "Unable to connect to the backend. Check that the API is running.",
-          );
-        }
-      }
-    });
+    try {
+      const data = await runJobPipeline(payload);
+      actions.endJob(data, null, duration);
+    } catch (error) {
+      const errorMsg = error instanceof ApiError
+        ? error.message
+        : "Unable to connect to the backend. Check that the API is running.";
+      actions.endJob(null, errorMsg, duration);
+    }
   };
 
   return (
@@ -63,7 +54,6 @@ export default function Home() {
 
       <JobForm
         onSubmit={runPipeline}
-        onError={setErrorMessage}
         disabled={isPending}
       />
 
@@ -85,7 +75,7 @@ export default function Home() {
         </p>
       )}
 
-      <JobResult data={result} />
+      <JobResult />
     </div>
   );
 }

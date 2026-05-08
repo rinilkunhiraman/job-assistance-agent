@@ -57,8 +57,12 @@ function MarkdownView({ content }: { content: string }) {
   );
 }
 
-export default function JobResult({ data }: JobResultProps) {
-  if (!data) {
+import { useJobStore } from "@/store/useJobStore";
+
+export default function JobResult() {
+  const result = useJobStore((state) => state.jobStatus.result);
+
+  if (!result) {
     return null;
   }
 
@@ -73,19 +77,19 @@ export default function JobResult({ data }: JobResultProps) {
 
       <TabsContent value="fit">
         <Card className="relative">
-          <CopyButton text={data.fit_summary} />
+          <CopyButton text={result.fit_summary} />
           <CardContent className="space-y-4 p-4 pt-10 sm:pt-4 sm:pr-12">
-            <MarkdownView content={data.fit_summary} />
-            {(data.keywords.matched.length > 0 ||
-              data.keywords.missing.length > 0) && (
+            <MarkdownView content={result.fit_summary} />
+            {(result.keywords.matched.length > 0 ||
+              result.keywords.missing.length > 0) && (
               <div className="space-y-2 mt-6 pt-4 border-t">
                 <div>
                   <span className="font-semibold">Matched keywords:</span>{" "}
-                  {data.keywords.matched.join(", ") || "None"}
+                  {result.keywords.matched.join(", ") || "None"}
                 </div>
                 <div>
                   <span className="font-semibold">Missing keywords:</span>{" "}
-                  {data.keywords.missing.join(", ") || "None"}
+                  {result.keywords.missing.join(", ") || "None"}
                 </div>
               </div>
             )}
@@ -95,27 +99,27 @@ export default function JobResult({ data }: JobResultProps) {
 
       <TabsContent value="resume">
         <Card className="relative">
-          <CopyButton text={data.resume_improvements} />
+          <CopyButton text={result.resume_improvements} />
           <CardContent className="p-4 pt-10 sm:pt-4 sm:pr-12">
-            <MarkdownView content={data.resume_improvements} />
+            <MarkdownView content={result.resume_improvements} />
           </CardContent>
         </Card>
       </TabsContent>
 
       <TabsContent value="outreach">
         <Card className="relative">
-          <CopyButton text={data.outreach_message} />
+          <CopyButton text={result.outreach_message} />
           <CardContent className="p-4 pt-10 sm:pt-4 sm:pr-12">
-            <MarkdownView content={data.outreach_message} />
+            <MarkdownView content={result.outreach_message} />
           </CardContent>
         </Card>
       </TabsContent>
 
       <TabsContent value="cover">
         <Card className="relative">
-          <CopyButton text={data.cover_letter} />
+          <CopyButton text={result.cover_letter} />
           <CardContent className="p-4 pt-10 sm:pt-4 sm:pr-12">
-            <MarkdownView content={data.cover_letter} />
+            <MarkdownView content={result.cover_letter} />
           </CardContent>
         </Card>
       </TabsContent>
