@@ -51,8 +51,15 @@ export function getInitialFormState(): FormState {
 }
 
 export function toJobRequest(form: FormState): JobRequest {
+  if (!form.experience_level || !form.tone) {
+    throw new Error("Experience level and tone are required");
+  }
   return {
-    ...form,
+    resume: form.resume,
+    job_description: form.job_description,
+    target_role: form.target_role,
+    experience_level: form.experience_level,
+    tone: form.tone,
     achievements: form.achievements?.trim() || undefined,
   };
 }
