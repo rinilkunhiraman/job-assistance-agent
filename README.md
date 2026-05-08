@@ -1,4 +1,4 @@
-# AI Job Copilot 🤖
+# AI Job Application Agent 🤖
 
 AI-powered multi-agent system to help candidates generate everything needed for a job application — instantly.
 
