@@ -1,8 +1,8 @@
 "use client";
 
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight, Save } from "lucide-react";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -19,6 +19,7 @@ import {
   toJobRequest,
   jobFormSchema,
 } from "@/lib/job";
+import { useJobStore } from "@/store/useJobStore";
 
 type JobFormProps = {
   disabled?: boolean;
@@ -34,6 +35,14 @@ export default function JobForm({
   onSubmit,
 }: JobFormProps) {
   const {
+    formValues,
+    ui,
+    resumes,
+    activeResumeId,
+    actions
+  } = useJobStore();
+
+  const {
     register,
     handleSubmit: rhSubmit,
     setValue,
@@ -41,20 +50,40 @@ export default function JobForm({
     formState: { errors },
   } = useForm<FormState>({
     resolver: zodResolver(jobFormSchema),
-    defaultValues: getInitialFormState(),
+    defaultValues: formValues,
   });
 
-  const [showResume, setShowResume] = useState(true);
-  const [showJobDescription, setShowJobDescription] = useState(true);
-  const [showPreferences, setShowPreferences] = useState(true);
+  // Sync react-hook-form with Zustand store
+  useEffect(() => {
+    const subscription = watch((value) => {
+      Object.entries(value).forEach(([field, val]) => {
+        actions.setFieldValue(field as any, val);
+      });
+    });
+    return () => subscription.unsubscribe();
+  }, [watch, actions]);
 
-  const formValues = watch();
+  useEffect(() => {
+    if (activeResumeId) {
+      const resume = resumes[activeResumeId];
+      if (resume) {
+        setValue("resume", resume.content);
+      }
+    }
+  }, [activeResumeId, resumes, setValue]);
+
+  const formValuesWatch = watch();
+
+  const handleSaveResume = () => {
+    const name = prompt("Enter a name for this resume template:");
+    if (name) {
+      actions.saveResume(name, formValuesWatch.resume);
+    }
+  };
 
   const onSubmitHandler = async (data: FormState) => {
-    onError(null);
-    setShowResume(false);
-    setShowJobDescription(false);
-    setShowPreferences(false);
+    if (onError) onError(null);
+    actions.closeAllSections();
     await onSubmit(toJobRequest(data));
   };
 
@@ -83,43 +112,88 @@ export default function JobForm({
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => setShowResume(!showResume)}
+              onClick={() => actions.toggleSection('showResume')}
               className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
             >
-              {showResume ? (
+              {ui.showResume ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
               Resume
             </button>
-            {showResume && (
-              <Textarea
-                id="resume"
-                {...register("resume")}
-                placeholder="Paste the full resume here..."
-                disabled={disabled}
-                className={`min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
-                  errors.resume ? "border-destructive" : ""
-                }`}
-              />
+            {ui.showResume && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    {activeResumeId
+                      ? `Loaded: ${Object.values(resumes).find(r => r.id === activeResumeId)?.name}`
+                      : "No template loaded"}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={activeResumeId || ""}
+                      onValueChange={(id) => {
+                        if (id === "none") {
+                          actions.loadResume(""); // Using a value that doesn't exist to clear
+                          setValue("resume", "");
+                        } else {
+                          actions.loadResume(id);
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="h-7 w-fit text-xs">
+                        <SelectValue placeholder="Select a Resume..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None / Clear</SelectItem>
+                        {Object.values(resumes).map((r) => (
+                          <SelectItem key={r.id} value={r.id}>
+                            {r.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="h-7 w-7"
+                      onClick={handleSaveResume}
+                      disabled={!formValuesWatch.resume || disabled}
+                      title="Save as template"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                <Textarea
+                  id="resume"
+                  {...register("resume")}
+                  placeholder="Paste the full resume here..."
+                  disabled={disabled}
+                  className={`min-h-36 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
+                    errors.resume ? "border-destructive" : ""
+                  }`}
+                />
+              </div>
             )}
           </div>
 
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => setShowJobDescription(!showJobDescription)}
+              onClick={() => actions.toggleSection('showJobDescription')}
               className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
             >
-              {showJobDescription ? (
+              {ui.showJobDescription ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
               Job description
             </button>
-            {showJobDescription && (
+            {ui.showJobDescription && (
               <Textarea
                 id="job_description"
                 {...register("job_description")}
@@ -135,17 +209,17 @@ export default function JobForm({
           <div className="space-y-2">
             <button
               type="button"
-              onClick={() => setShowPreferences(!showPreferences)}
+              onClick={() => actions.toggleSection('showPreferences')}
               className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
             >
-              {showPreferences ? (
+              {ui.showPreferences ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
               Preferences
             </button>
-            {showPreferences && (
+            {ui.showPreferences && (
               <div className="space-y-4">
                 <label htmlFor="target_role" className="block space-y-2">
                   <span className="text-sm font-medium">Target role</span>
@@ -154,7 +228,7 @@ export default function JobForm({
                     {...register("target_role")}
                     placeholder="Target role"
                     disabled={disabled}
-                    className={`${fieldClassName} ${
+                    className={` ${fieldClassName} ${
                       errors.target_role ? "border-destructive" : ""
                     }`}
                   />
@@ -163,7 +237,7 @@ export default function JobForm({
                 <label htmlFor="experience_level" className="block space-y-2">
                   <span className="text-sm font-medium">Experience level</span>
                   <Select
-                    value={formValues.experience_level}
+                    value={formValuesWatch.experience_level}
                     onValueChange={(value) => setValue("experience_level", value as any)}
                     disabled={disabled}
                   >
@@ -186,7 +260,7 @@ export default function JobForm({
                 <label htmlFor="tone" className="block space-y-2">
                   <span className="text-sm font-medium">Tone</span>
                   <Select
-                    value={formValues.tone}
+                    value={formValuesWatch.tone}
                     onValueChange={(value) => setValue("tone", value as any)}
                     disabled={disabled}
                   >
