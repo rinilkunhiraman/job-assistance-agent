@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Save } from "lucide-react";
+import { ChevronDown, ChevronRight, Save, Settings, Trash2, RotateCcw } from "lucide-react";
 import type { FormEvent } from "react";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   EXPERIENCE_LEVELS,
   type FormState,
@@ -34,13 +35,11 @@ export default function JobForm({
   onError,
   onSubmit,
 }: JobFormProps) {
-  const {
-    formValues,
-    ui,
-    resumes,
-    activeResumeId,
-    actions
-  } = useJobStore();
+  const formValues = useJobStore((state) => state.formValues);
+  const ui = useJobStore((state) => state.ui);
+  const resumes = useJobStore((state) => state.resumes);
+  const activeResumeId = useJobStore((state) => state.activeResumeId);
+  const actions = useJobStore((state) => state.actions);
 
   const {
     register,
@@ -57,11 +56,11 @@ export default function JobForm({
   useEffect(() => {
     const subscription = watch((value) => {
       Object.entries(value).forEach(([field, val]) => {
-        actions.setFieldValue(field as any, val);
+        actions.setFieldValue(field as keyof FormState, val as any);
       });
     });
     return () => subscription.unsubscribe();
-  }, [watch, actions]);
+  }, [watch]);
 
   useEffect(() => {
     if (activeResumeId) {
@@ -78,6 +77,16 @@ export default function JobForm({
     const name = prompt("Enter a name for this resume template:");
     if (name) {
       actions.saveResume(name, formValuesWatch.resume);
+    }
+  };
+
+  const handleResetForm = () => {
+    if (confirm("Are you sure you want to clear all fields?")) {
+      actions.resetForm();
+      // Reset react-hook-form state to initial values
+      Object.entries(getInitialFormState()).forEach(([field, value]) => {
+        setValue(field as any, value);
+      });
     }
   };
 
@@ -165,6 +174,46 @@ export default function JobForm({
                     >
                       <Save className="h-3.5 w-3.5" />
                     </Button>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-7 w-7"
+                          disabled={disabled}
+                          title="Manage Resumes"
+                        >
+                          <Settings className="h-3.5 w-3.5" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-64 max-h-60 overflow-y-auto">
+                        <div className="space-y-2">
+                          <h3 className="text-xs font-semibold text-muted-foreground mb-2">Saved Resumes</h3>
+                          {Object.values(resumes).length === 0 ? (
+                            <p className="text-xs text-muted-foreground italic">No resumes saved yet.</p>
+                          ) : (
+                            Object.values(resumes).map((r) => (
+                              <div
+                                key={r.id}
+                                className="group flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors"
+                              >
+                                <span className="text-xs truncate pr-2">{r.name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => actions.deleteResume(r.id)}
+                                  title="Delete resume"
+                                >
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
                 </div>
                 <Textarea
@@ -308,6 +357,16 @@ export default function JobForm({
             className="min-h-11 w-full sm:w-auto"
           >
             {disabled ? "Generating..." : "Generate"}
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResetForm}
+            disabled={disabled}
+            className="min-h-11 w-full sm:w-auto"
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Clear Form
           </Button>
         </form>
       </CardContent>
