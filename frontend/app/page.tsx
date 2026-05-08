@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import JobForm from "@/components/job/JobForm";
 import JobResult from "@/components/job/JobResult";
@@ -10,14 +10,20 @@ import { useJobStore } from "@/store/useJobStore";
 export default function Home() {
   const { jobStatus, actions } = useJobStore();
   const { isPending, duration, result, errorMessage } = jobStatus;
+  const startTimeRef = useRef<number | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isPending) {
-      const startTime = Date.now();
+      startTimeRef.current = Date.now();
       interval = setInterval(() => {
-        actions.setDuration(Date.now() - startTime);
+        if (startTimeRef.current) {
+          actions.setDuration(Date.now() - startTimeRef.current);
+        }
       }, 100);
+    } else {
+      startTimeRef.current = null;
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -39,12 +45,14 @@ export default function Home() {
 
     try {
       const data = await runJobPipeline(payload);
-      actions.endJob(data, null, duration);
+      const finalDuration = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
+      actions.endJob(data, null, finalDuration);
     } catch (error) {
       const errorMsg = error instanceof ApiError
         ? error.message
         : "Unable to connect to the backend. Check that the API is running.";
-      actions.endJob(null, errorMsg, duration);
+      const finalDuration = startTimeRef.current ? Date.now() - startTimeRef.current : 0;
+      actions.endJob(null, errorMsg, finalDuration);
     }
   };
 
@@ -54,23 +62,24 @@ export default function Home() {
 
       <JobForm
         onSubmit={runPipeline}
+        onError={setFormError}
         disabled={isPending}
       />
 
-      {errorMessage && (
-        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMessage}
+      {(errorMessage || formError) && (
+        <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          {errorMessage || formError}
         </div>
       )}
 
       {isPending && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-sm text-muted-foreground" aria-live="polite">
           Generating tailored application materials... {duration ? `(${formatDuration(duration)})` : ""}
         </p>
       )}
 
       {!isPending && duration && (
-        <p className="text-sm text-muted-foreground text-center">
+        <p className="text-sm text-muted-foreground text-center" role="status">
           Completed in {formatDuration(duration)}
         </p>
       )}

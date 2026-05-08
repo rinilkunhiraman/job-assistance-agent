@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useState } from "react";
+import { useState, Component, type ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -13,6 +13,32 @@ import type { JobResponse } from "@/lib/job";
 type JobResultProps = {
   data: JobResponse | null;
 };
+
+class MarkdownErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error: error.message };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("Markdown rendering error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-sm text-destructive">
+          Unable to render content. Please try copying the raw text instead.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -34,6 +60,7 @@ function CopyButton({ text }: { text: string }) {
       onClick={handleCopy}
       className="absolute top-2 right-2 h-8 w-8 transition-all"
       title="Copy to clipboard"
+      aria-label={copied ? "Copied" : "Copy to clipboard"}
     >
       {copied ? (
         <Check className="h-4 w-4 text-green-500" />
@@ -48,12 +75,18 @@ const markdownClasses =
   "max-w-none space-y-4 [&>h1]:text-2xl [&>h1]:font-bold [&>h2]:text-xl [&>h2]:font-bold [&>h3]:text-lg [&>h3]:font-bold [&>ul]:list-disc [&>ul]:pl-5 [&>ol]:list-decimal [&>ol]:pl-5 [&>p]:leading-relaxed [&>li]:mt-1";
 
 function MarkdownView({ content }: { content: string }) {
+  if (!content || typeof content !== "string") {
+    return <p className="text-muted-foreground">No content available</p>;
+  }
+
   return (
-    <div className={markdownClasses}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-        {content}
-      </ReactMarkdown>
-    </div>
+    <MarkdownErrorBoundary>
+      <div className={markdownClasses}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          {content}
+        </ReactMarkdown>
+      </div>
+    </MarkdownErrorBoundary>
   );
 }
 
