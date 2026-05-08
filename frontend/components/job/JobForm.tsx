@@ -46,11 +46,15 @@ export default function JobForm({
 
   const [showResume, setShowResume] = useState(true);
   const [showJobDescription, setShowJobDescription] = useState(true);
+  const [showPreferences, setShowPreferences] = useState(true);
 
   const formValues = watch();
 
   const onSubmitHandler = async (data: FormState) => {
     onError(null);
+    setShowResume(false);
+    setShowJobDescription(false);
+    setShowPreferences(false);
     await onSubmit(toJobRequest(data));
   };
 
@@ -128,89 +132,101 @@ export default function JobForm({
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label htmlFor="target_role" className="block space-y-2">
-              <span className="text-sm font-medium">Target role</span>
-              <Input
-                id="target_role"
-                {...register("target_role")}
-                placeholder="Target role"
-                disabled={disabled}
-                className={`${fieldClassName} ${
-                  errors.target_role ? "border-destructive" : ""
-                }`}
-              />
-            </label>
-
-            <label htmlFor="experience_level" className="block space-y-2">
-              <span className="text-sm font-medium">Experience level</span>
-              <Select
-                value={formValues.experience_level}
-                onValueChange={(value) => setValue("experience_level", value as any)}
-                disabled={disabled}
-              >
-                <SelectTrigger id="experience_level">
-                  <SelectValue placeholder="Select experience level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {EXPERIENCE_LEVELS.map((level) => (
-                    <SelectItem key={level} value={level}>
-                      {level}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.experience_level && (
-                <p className="text-xs text-destructive">{errors.experience_level.message}</p>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => setShowPreferences(!showPreferences)}
+              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+            >
+              {showPreferences ? (
+                <ChevronDown className="h-4 w-4" />
+              ) : (
+                <ChevronRight className="h-4 w-4" />
               )}
-            </label>
-          </div>
+              Preferences
+            </button>
+            {showPreferences && (
+              <div className="space-y-4">
+                <label htmlFor="target_role" className="block space-y-2">
+                  <span className="text-sm font-medium">Target role</span>
+                  <Input
+                    id="target_role"
+                    {...register("target_role")}
+                    placeholder="Target role"
+                    disabled={disabled}
+                    className={`${fieldClassName} ${
+                      errors.target_role ? "border-destructive" : ""
+                    }`}
+                  />
+                </label>
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label htmlFor="tone" className="block space-y-2">
-              <span className="text-sm font-medium">Tone</span>
-              <Select
-                value={formValues.tone}
-                onValueChange={(value) => setValue("tone", value as any)}
-                disabled={disabled}
-              >
-                <SelectTrigger id="tone">
-                  <SelectValue placeholder="Select tone" />
-                </SelectTrigger>
-                <SelectContent>
-                  {TONES.map((tone) => (
-                    <SelectItem key={tone} value={tone}>
-                      {tone}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.tone && (
-                <p className="text-xs text-destructive">{errors.tone.message}</p>
-              )}
-            </label>
+                <label htmlFor="experience_level" className="block space-y-2">
+                  <span className="text-sm font-medium">Experience level</span>
+                  <Select
+                    value={formValues.experience_level}
+                    onValueChange={(value) => setValue("experience_level", value as any)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger id="experience_level">
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPERIENCE_LEVELS.map((level) => (
+                        <SelectItem key={level} value={level}>
+                          {level}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.experience_level && (
+                    <p className="text-xs text-destructive">{errors.experience_level.message}</p>
+                  )}
+                </label>
 
-            <div className="hidden sm:block" />
-          </div>
+                <label htmlFor="tone" className="block space-y-2">
+                  <span className="text-sm font-medium">Tone</span>
+                  <Select
+                    value={formValues.tone}
+                    onValueChange={(value) => setValue("tone", value as any)}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger id="tone">
+                      <SelectValue placeholder="Select tone" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TONES.map((tone) => (
+                        <SelectItem key={tone} value={tone}>
+                          {tone}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.tone && (
+                    <p className="text-xs text-destructive">{errors.tone.message}</p>
+                  )}
+                </label>
 
-          <label htmlFor="achievements" className="block space-y-2">
-            <span className="text-sm font-medium">
-              Key achievements
-              <span className="ml-1 text-muted-foreground">(optional)</span>
-            </span>
-            <Textarea
-              id="achievements"
-              {...register("achievements")}
-              placeholder="Key achievements, metrics, or wins you want emphasized"
-              disabled={disabled}
-              className={`min-h-28 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
-                errors.achievements ? "border-destructive" : ""
-              }`}
-            />
-            {errors.achievements && (
-              <p className="text-xs text-destructive">{errors.achievements.message}</p>
+                <label htmlFor="achievements" className="block space-y-2">
+                  <span className="text-sm font-medium">
+                    Key achievements
+                    <span className="ml-1 text-muted-foreground">(optional)</span>
+                  </span>
+                  <Textarea
+                    id="achievements"
+                    {...register("achievements")}
+                    placeholder="Key achievements, metrics, or wins you want emphasized"
+                    disabled={disabled}
+                    className={`min-h-28 resize-y rounded-xl px-3 py-3 text-sm sm:text-base ${
+                      errors.achievements ? "border-destructive" : ""
+                    }`}
+                  />
+                  {errors.achievements && (
+                    <p className="text-xs text-destructive">{errors.achievements.message}</p>
+                  )}
+                </label>
+              </div>
             )}
-          </label>
+          </div>
 
           <Button
             type="submit"
