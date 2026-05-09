@@ -4,38 +4,129 @@ AI-powered multi-agent system to help candidates generate everything needed for 
 
 ## 🚀 Features (MVP)
 
-* Resume optimization
-* Recruiter outreach message
-* Cover letter generation
-* Job fit analysis
-* Keyword matching
+- Resume optimization with ATS keyword targeting
+- Job fit analysis with keyword matching
+- Recruiter outreach message generation
+- Cover letter generation tailored to the role
+- Application history saved locally
 
 ## 🧠 Tech Stack
 
-* Backend: FastAPI + CrewAI
-* LLM: Ollama (Gemma)
-* Frontend: Next.js
+- **Backend:** FastAPI + CrewAI + Ollama (Gemma 4)
+- **Frontend:** Next.js 15 + Tailwind CSS + Zustand
+- **LLM:** Ollama (local)
 
-## 📂 Project Structure
+## 📋 Prerequisites
 
-* `backend/` → API + AI pipeline
-* `frontend/` → UI
+Before running the project, ensure you have:
 
-## ⚙️ Setup (Backend)
+1. **Node.js** (v18+) - [Install](https://nodejs.org)
+2. **Python** (3.11+) - [Install](https://www.python.org)
+3. **Ollama** - [Install](https://ollama.com)
+4. **uv** (recommended) or pip - `pip install uv`
+
+## ⚡ Quick Start
+
+### 1. Start Ollama
+
+```bash
+# Pull the required model (first time only)
+ollama pull gemma4:31b
+
+# Start Ollama server (runs on port 11434 by default)
+ollama serve
+```
+
+### 2. Set Up Backend
 
 ```bash
 cd backend
-conda activate crewai-backend
+
+# Create virtual environment (recommended)
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install fastapi crewai pydantic uvicorn
+
+# Create .env file (optional - defaults work for local)
+# echo "OLLAMA_MODEL=ollama/gemma4:31b" > .env
+
+# Run the backend
 uvicorn app.main:app --reload
 ```
 
-## ⚙️ Setup (Frontend)
+The backend runs at **http://localhost:8000**
+
+### 3. Set Up Frontend
 
 ```bash
 cd frontend
+
+# Install dependencies
 npm install
+
+# Run the development server
 npm run dev
 ```
+
+The frontend runs at **http://localhost:3000**
+
+## ⚙️ Environment Variables
+
+### Backend (.env)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_MODEL` | `ollama/gemma4:31b` | Model to use |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API endpoint |
+| `CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Allowed frontend origins |
+| `APP_ENV` | `development` | Environment (development/production) |
+
+### Frontend
+
+No additional configuration needed. The frontend connects to the backend at `http://localhost:8000`.
+
+## 📂 Project Structure
+
+```
+job-assistance-agent/
+├── backend/              # FastAPI + CrewAI backend
+│   ├── app/
+│   │   ├── agents/      # AI agent definitions
+│   │   ├── api/         # API routes
+│   │   ├── core/        # Config & exceptions
+│   │   ├── schemas/     # Pydantic models
+│   │   ├── services/    # Pipeline execution
+│   │   └── tasks/       # Task definitions
+│   └── main.py          # FastAPI app entry
+├── frontend/            # Next.js frontend
+│   ├── app/             # App router pages
+│   ├── components/     # React components
+│   ├── lib/            # Utilities & API
+│   └── store/          # Zustand state
+└── README.md
+```
+
+## 🔧 Troubleshooting
+
+### Ollama not running
+```
+Error: Unable to connect to Ollama at http://localhost:11434
+```
+**Fix:** Run `ollama serve` in a separate terminal.
+
+### Model not found
+```
+Error: model 'gemma4:31b' not found
+```
+**Fix:** Run `ollama pull gemma4:31b`
+
+### CORS errors
+**Fix:** Ensure `CORS_ORIGINS` in backend config includes your frontend URL.
+
+### Frontend can't connect to backend
+**Fix:** Ensure backend is running at `http://localhost:8000`.
 
 ## 📌 Status
 
