@@ -33,16 +33,13 @@ export async function runJobPipeline(
       signal: controller.signal,
     });
 
-    const body = await response.json().catch((err) => {
+    const body = (await response.json().catch((err) => {
       throw new ApiError(
         `Failed to parse response JSON: ${err instanceof Error ? err.message : "Unknown error"}`,
         "json_parse_error",
         response.status,
       );
-    }) as
-      | JobResponse
-      | ApiErrorResponse
-      | null;
+    })) as JobResponse | ApiErrorResponse | null;
 
     if (!response.ok) {
       const error =
@@ -65,7 +62,7 @@ export async function runJobPipeline(
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
       throw new ApiError(
-        "The request timed out after 60 seconds.",
+        "The request timed out after 10 minutes.",
         "request_timeout",
         408,
       );

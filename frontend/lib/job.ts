@@ -13,11 +13,17 @@ export type Tone = (typeof TONES)[number];
 
 export const jobFormSchema = z.object({
   resume: z.string().min(100, "Resume must be at least 100 characters."),
-  job_description: z.string().min(100, "Job description must be at least 100 characters."),
+  job_description: z
+    .string()
+    .min(100, "Job description must be at least 100 characters."),
   target_role: z.string().min(2, "Target role must be at least 2 characters."),
   experience_level: z.enum(EXPERIENCE_LEVELS),
   tone: z.enum(TONES),
-  achievements: z.string().max(4000, "Achievements must be 4000 characters or fewer.").optional().or(z.literal("")),
+  achievements: z
+    .string()
+    .max(4000, "Achievements must be 4000 characters or fewer.")
+    .optional()
+    .or(z.literal("")),
 });
 
 export type JobRequest = z.infer<typeof jobFormSchema>;

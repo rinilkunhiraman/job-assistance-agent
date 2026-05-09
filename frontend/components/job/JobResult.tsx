@@ -1,20 +1,18 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { useState, Component, type ReactNode } from "react";
+import { Component, type ReactNode, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type { JobResponse } from "@/lib/job";
 
-type JobResultProps = {
-  data: JobResponse | null;
-};
-
-class MarkdownErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean; error: string | null }> {
+class MarkdownErrorBoundary extends Component<
+  { children: ReactNode },
+  { hasError: boolean; error: string | null }
+> {
   constructor(props: { children: ReactNode }) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -82,9 +80,7 @@ function MarkdownView({ content }: { content: string }) {
   return (
     <MarkdownErrorBoundary>
       <div className={markdownClasses}>
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>
-          {content}
-        </ReactMarkdown>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
       </div>
     </MarkdownErrorBoundary>
   );
