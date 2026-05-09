@@ -1,24 +1,41 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Save, Settings, Trash2, RotateCcw } from "lucide-react";
-import type { FormEvent } from "react";
-import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  ChevronDown,
+  ChevronRight,
+  RotateCcw,
+  Save,
+  Settings,
+  Trash2,
+} from "lucide-react";
+import type { FormEvent } from "react";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import {
   EXPERIENCE_LEVELS,
   type FormState,
   getInitialFormState,
+  jobFormSchema,
   TONES,
   toJobRequest,
-  jobFormSchema,
 } from "@/lib/job";
 import { useJobStore } from "@/store/useJobStore";
 
@@ -60,7 +77,7 @@ export default function JobForm({
       });
     });
     return () => subscription.unsubscribe();
-  }, [watch]);
+  }, [watch, actions.setFieldValue]);
 
   useEffect(() => {
     if (activeResumeId) {
@@ -101,28 +118,30 @@ export default function JobForm({
     await rhSubmit(onSubmitHandler)();
 
     if (Object.keys(errors).length > 0) {
-      const firstError = Object.values(errors)[0]?.message || "Please check the form for errors.";
+      const firstError =
+        Object.values(errors)[0]?.message ||
+        "Please check the form for errors.";
       onError(firstError as string);
     }
   };
 
   return (
-    <Card className="overflow-hidden rounded-2xl">
+    <Card className="overflow-hidden rounded-2xl shadow-lg border-border/50">
       <CardContent className="p-4 sm:p-6">
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-1">
-            <h2 className="text-xl font-semibold">Application Inputs</h2>
+            <h2 className="text-xl font-semibold font-heading">Application Inputs</h2>
             <p className="text-sm text-muted-foreground">
               Paste the full resume and full job description, then choose the
               tone you want the AI to use.
             </p>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2 first:pt-0">
             <button
               type="button"
-              onClick={() => actions.toggleSection('showResume')}
-              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => actions.toggleSection("showResume")}
+              className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent/50 transition-colors"
             >
               {ui.showResume ? (
                 <ChevronDown className="h-4 w-4" />
@@ -136,7 +155,7 @@ export default function JobForm({
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs font-medium text-muted-foreground">
                     {activeResumeId
-                      ? `Loaded: ${Object.values(resumes).find(r => r.id === activeResumeId)?.name}`
+                      ? `Loaded: ${Object.values(resumes).find((r) => r.id === activeResumeId)?.name}`
                       : "No template loaded"}
                   </span>
                   <div className="flex items-center gap-2">
@@ -171,6 +190,7 @@ export default function JobForm({
                       onClick={handleSaveResume}
                       disabled={!formValuesWatch.resume || disabled}
                       title="Save as template"
+                      aria-label="Save current resume as template"
                     >
                       <Save className="h-3.5 w-3.5" />
                     </Button>
@@ -183,22 +203,29 @@ export default function JobForm({
                           className="h-7 w-7"
                           disabled={disabled}
                           title="Manage Resumes"
+                          aria-label="Manage saved resume templates"
                         >
                           <Settings className="h-3.5 w-3.5" />
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-64 max-h-60 overflow-y-auto">
                         <div className="space-y-2">
-                          <h3 className="text-xs font-semibold text-muted-foreground mb-2">Saved Resumes</h3>
+                          <h3 className="text-xs font-semibold text-muted-foreground mb-2">
+                            Saved Resumes
+                          </h3>
                           {Object.values(resumes).length === 0 ? (
-                            <p className="text-xs text-muted-foreground italic">No resumes saved yet.</p>
+                            <p className="text-xs text-muted-foreground italic">
+                              No resumes saved yet.
+                            </p>
                           ) : (
                             Object.values(resumes).map((r) => (
                               <div
                                 key={r.id}
                                 className="group flex items-center justify-between p-2 rounded-md hover:bg-accent transition-colors"
                               >
-                                <span className="text-xs truncate pr-2">{r.name}</span>
+                                <span className="text-xs truncate pr-2">
+                                  {r.name}
+                                </span>
                                 <Button
                                   variant="ghost"
                                   size="icon"
@@ -229,11 +256,11 @@ export default function JobForm({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2 first:pt-0">
             <button
               type="button"
-              onClick={() => actions.toggleSection('showJobDescription')}
-              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => actions.toggleSection("showJobDescription")}
+              className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent/50 transition-colors"
             >
               {ui.showJobDescription ? (
                 <ChevronDown className="h-4 w-4" />
@@ -255,11 +282,11 @@ export default function JobForm({
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 pt-2 first:pt-0">
             <button
               type="button"
-              onClick={() => actions.toggleSection('showPreferences')}
-              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => actions.toggleSection("showPreferences")}
+              className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-sm font-medium hover:bg-accent/50 transition-colors"
             >
               {ui.showPreferences ? (
                 <ChevronDown className="h-4 w-4" />
@@ -287,7 +314,9 @@ export default function JobForm({
                   <span className="text-sm font-medium">Experience level</span>
                   <Select
                     value={formValuesWatch.experience_level}
-                    onValueChange={(value) => setValue("experience_level", value as any)}
+                    onValueChange={(value) =>
+                      setValue("experience_level", value as any)
+                    }
                     disabled={disabled}
                   >
                     <SelectTrigger id="experience_level">
@@ -302,7 +331,9 @@ export default function JobForm({
                     </SelectContent>
                   </Select>
                   {errors.experience_level && (
-                    <p className="text-xs text-destructive">{errors.experience_level.message}</p>
+                    <p className="text-xs text-destructive">
+                      {errors.experience_level.message}
+                    </p>
                   )}
                 </label>
 
@@ -325,14 +356,18 @@ export default function JobForm({
                     </SelectContent>
                   </Select>
                   {errors.tone && (
-                    <p className="text-xs text-destructive">{errors.tone.message}</p>
+                    <p className="text-xs text-destructive">
+                      {errors.tone.message}
+                    </p>
                   )}
                 </label>
 
                 <label htmlFor="achievements" className="block space-y-2">
                   <span className="text-sm font-medium">
                     Key achievements
-                    <span className="ml-1 text-muted-foreground">(optional)</span>
+                    <span className="ml-1 text-muted-foreground">
+                      (optional)
+                    </span>
                   </span>
                   <Textarea
                     id="achievements"
@@ -344,30 +379,34 @@ export default function JobForm({
                     }`}
                   />
                   {errors.achievements && (
-                    <p className="text-xs text-destructive">{errors.achievements.message}</p>
+                    <p className="text-xs text-destructive">
+                      {errors.achievements.message}
+                    </p>
                   )}
                 </label>
               </div>
             )}
           </div>
 
-          <Button
-            type="submit"
-            disabled={disabled}
-            className="min-h-11 w-full sm:w-auto"
-          >
-            {disabled ? "Generating..." : "Generate"}
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleResetForm}
-            disabled={disabled}
-            className="min-h-11 w-full sm:w-auto"
-          >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Clear Form
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              type="submit"
+              disabled={disabled}
+              className="min-h-11 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            >
+              {disabled ? "Generating..." : "Generate"}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResetForm}
+              disabled={disabled}
+              className="min-h-11 border-dashed"
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Clear Form
+            </Button>
+          </div>
         </form>
       </CardContent>
     </Card>
