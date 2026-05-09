@@ -90,7 +90,7 @@ No additional configuration needed. The frontend connects to the backend at `htt
 ## 📂 Project Structure
 
 ```
-job-assistance-agent/
+job-application-agent/
 ├── backend/              # FastAPI + CrewAI backend
 │   ├── app/
 │   │   ├── agents/      # AI agent definitions
