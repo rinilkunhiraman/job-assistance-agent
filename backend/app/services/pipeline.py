@@ -6,7 +6,13 @@ from crewai import Crew, LLM
 
 from app.core.config import get_settings
 from app.core.exceptions import PipelineExecutionError
-from app.schemas.job import JobRequest, JobResponse, Keywords
+from app.schemas.job import JobRequest, JobResponse
+from app.schemas.pipeline_outputs import (
+    FitAnalysisOutput,
+    ResumeOptimizationOutput,
+    OutreachOutput,
+    CoverLetterOutput,
+)
 from app.agents.factory import (
     get_fit_evaluator,
     get_resume_optimizer,
@@ -41,7 +47,7 @@ def execute_single_task(agent, task, verbose: bool):
     output = result.tasks_output[0]
     if not output.json_dict:
         logger.warning("Task did not return json_dict: %s", output.raw)
-        return {}
+        return None
     return output.json_dict
 
 def run_job_pipeline(
@@ -51,42 +57,41 @@ def run_job_pipeline(
 ) -> JobResponse:
     pipeline_started_at = perf_counter()
     logger.info(
-        "pipeline_started request_id=%s target_role=%s experience_level=%s tone=%s resume_chars=%s job_description_chars=%s achievements_chars=%s model=%s",
-        request_id,
-        req.target_role,
-        req.experience_level,
-        req.tone,
-        len(req.resume),
-        len(req.job_description),
-        len(req.achievements or ""),
-        settings.ollama_model,
+        "pipeline_started request_id=%s target_role=%s experience_level=%s tone=%s",
+        request_id, req.target_role, req.experience_level, req.tone
     )
 
     llm = build_llm()
 
-    # Agents
+    # 1. Run Fit Evaluation first for collaboration
     fit_evaluator = get_fit_evaluator(llm)
+    fit_task = build_fit_task(fit_evaluator, req)
+    
+    logger.info("pipeline_fit_started request_id=%s", request_id)
+    fit_raw = execute_single_task(fit_evaluator, fit_task, settings.crew_verbose)
+    
+    if not fit_raw:
+        logger.error("pipeline_fit_failed request_id=%s", request_id)
+        raise PipelineExecutionError("Fit analysis failed. Pipeline cannot continue.")
+    
+    fit_context = FitAnalysisOutput(**fit_raw)
+    logger.info("pipeline_fit_completed request_id=%s", request_id)
+
+    # 2. Build remaining tasks with fit_context
     resume_optimizer = get_resume_optimizer(llm)
     outreach_writer = get_outreach_writer(llm)
     cover_letter_writer = get_cover_letter_writer(llm)
 
-    # Tasks
-    fit_task = build_fit_task(fit_evaluator, req)
-    resume_task = build_resume_task(resume_optimizer, req)
-    outreach_task = build_outreach_task(outreach_writer, req)
-    cover_task = build_cover_task(cover_letter_writer, req)
-
     tasks_to_run = {
-        "fit": (fit_evaluator, fit_task),
-        "resume": (resume_optimizer, resume_task),
-        "outreach": (outreach_writer, outreach_task),
-        "cover_letter": (cover_letter_writer, cover_task),
+        "resume": (resume_optimizer, build_resume_task(resume_optimizer, req, fit_context)),
+        "outreach": (outreach_writer, build_outreach_task(outreach_writer, req, fit_context)),
+        "cover_letter": (cover_letter_writer, build_cover_task(cover_letter_writer, req, fit_context)),
     }
 
-    results = {}
+    results = {"fit": fit_context}
     
     kickoff_started_at = perf_counter()
-    logger.info("pipeline_tasks_started request_id=%s tasks_count=%s", request_id, len(tasks_to_run))
+    logger.info("pipeline_parallel_tasks_started request_id=%s", request_id)
 
     with ThreadPoolExecutor(max_workers=len(tasks_to_run)) as executor:
         future_to_name = {
@@ -98,38 +103,45 @@ def run_job_pipeline(
             name = future_to_name[future]
             try:
                 data = future.result()
-                results[name] = data
-                logger.info("task_completed request_id=%s task_name=%s", request_id, name)
+                if data:
+                    if name == "resume":
+                        results[name] = ResumeOptimizationOutput(**data)
+                    elif name == "outreach":
+                        results[name] = OutreachOutput(**data)
+                    elif name == "cover_letter":
+                        results[name] = CoverLetterOutput(**data)
+                    logger.info("task_completed request_id=%s task_name=%s", request_id, name)
+                else:
+                    logger.warning("task_returned_no_data request_id=%s task_name=%s", request_id, name)
+                    results[name] = None
             except Exception as exc:
                 logger.exception("task_failed request_id=%s task_name=%s", request_id, name)
                 results[name] = None
                 
     kickoff_elapsed_ms = round((perf_counter() - kickoff_started_at) * 1000, 2)
-    logger.info("pipeline_tasks_finished request_id=%s duration_ms=%s", request_id, kickoff_elapsed_ms)
+    logger.info("pipeline_parallel_tasks_finished request_id=%s duration_ms=%s", request_id, kickoff_elapsed_ms)
 
-    # Safely extract data with fallbacks
-    fit_data = results.get("fit") or {}
-    resume_data = results.get("resume") or {}
-    outreach_data = results.get("outreach") or {}
-    cover_data = results.get("cover_letter") or {}
-
+    # Ensure we have something for all fields, even if failed
     response = JobResponse(
-        fit_summary=fit_data.get("fit_summary", "Fit analysis failed or unavailable."),
-        resume_improvements=resume_data.get("resume_improvements", "Resume improvements failed or unavailable."),
-        outreach_message=outreach_data.get("outreach_message", "Outreach message failed or unavailable."),
-        cover_letter=cover_data.get("cover_letter", "Cover letter failed or unavailable."),
-        keywords=Keywords(
-            matched=fit_data.get("matched_skills", []),
-            missing=fit_data.get("missing_skills", []),
+        fit=results["fit"],
+        resume=results.get("resume") or ResumeOptimizationOutput(
+            ats_keywords=[], professional_summary="Failed", skills={}, experience_bullets={}, improvement_notes=["Optimization failed."]
+        ),
+        outreach=results.get("outreach") or OutreachOutput(
+            message="Failed to generate outreach.", company_name=None, hook_skills=[]
+        ),
+        cover_letter=results.get("cover_letter") or CoverLetterOutput(
+            salutation="Dear Hiring Team,",
+            opening_paragraph="Failed to generate.",
+            body_paragraph_1="Failed to generate.",
+            body_paragraph_2="Failed to generate.",
+            closing_paragraph="Failed to generate.",
+            sign_off="Best regards,",
+            company_name="Company",
+            word_count=0
         ),
     )
 
     pipeline_elapsed_ms = round((perf_counter() - pipeline_started_at) * 1000, 2)
-    logger.info(
-        "pipeline_completed request_id=%s duration_ms=%s matched_keywords=%s missing_keywords=%s",
-        request_id,
-        pipeline_elapsed_ms,
-        len(response.keywords.matched),
-        len(response.keywords.missing),
-    )
+    logger.info("pipeline_completed request_id=%s duration_ms=%s", request_id, pipeline_elapsed_ms)
     return response

@@ -3,6 +3,12 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.config import get_settings
+from app.schemas.pipeline_outputs import (
+    FitAnalysisOutput,
+    ResumeOptimizationOutput,
+    OutreachOutput,
+    CoverLetterOutput,
+)
 
 settings = get_settings()
 
@@ -29,6 +35,11 @@ class JobRequest(BaseModel):
         max_length=120,
         description="Target role (e.g. Data Engineer)",
     )
+    company_name: str | None = Field(
+        None,
+        max_length=120,
+        description="Optional company name",
+    )
     experience_level: ExperienceLevel = Field(
         ...,
         description="Entry | Mid | Senior",
@@ -47,6 +58,7 @@ class JobRequest(BaseModel):
         "resume",
         "job_description",
         "target_role",
+        "company_name",
         "achievements",
         mode="before",
     )
@@ -63,20 +75,14 @@ class JobRequest(BaseModel):
             raise ValueError("must not be empty")
         return value
 
-    @field_validator("achievements")
+    @field_validator("company_name", "achievements")
     @classmethod
     def normalize_optional_text(cls, value: str | None) -> str | None:
         return value or None
 
 
-class Keywords(BaseModel):
-    matched: list[str]
-    missing: list[str]
-
-
 class JobResponse(BaseModel):
-    fit_summary: str
-    resume_improvements: str
-    outreach_message: str
-    cover_letter: str
-    keywords: Keywords
+    fit: FitAnalysisOutput
+    resume: ResumeOptimizationOutput
+    outreach: OutreachOutput
+    cover_letter: CoverLetterOutput

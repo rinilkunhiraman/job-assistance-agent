@@ -187,8 +187,8 @@ export const useJobStore = create<JobState>()(
         endJob: (result, error, duration) => {
           // Auto-save to history on successful result
           if (result) {
-            const { target_role, experience_level, tone, job_description } = get().formValues;
-            const company_name = extractCompanyName(job_description || "");
+            const { target_role, experience_level, tone, job_description, company_name: provided_company } = get().formValues;
+            const company_name = provided_company || extractCompanyName(job_description || "");
             const historyId = crypto.randomUUID();
             set((state) => ({
               jobStatus: {

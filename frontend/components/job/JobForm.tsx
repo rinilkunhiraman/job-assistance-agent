@@ -310,6 +310,24 @@ export default function JobForm({
                   />
                 </label>
 
+                <label htmlFor="company_name" className="block space-y-2">
+                  <span className="text-sm font-medium">
+                    Company name
+                    <span className="ml-1 text-muted-foreground">
+                      (optional)
+                    </span>
+                  </span>
+                  <Input
+                    id="company_name"
+                    {...register("company_name")}
+                    placeholder="e.g. Google, Acme Inc."
+                    disabled={disabled}
+                    className={` ${fieldClassName} ${
+                      errors.company_name ? "border-destructive" : ""
+                    }`}
+                  />
+                </label>
+
                 <label htmlFor="experience_level" className="block space-y-2">
                   <span className="text-sm font-medium">Experience level</span>
                   <Select

@@ -105,32 +105,32 @@ export default function History() {
               <div className="px-4 pb-4 pt-0 border-t border-border/50 animate-in">
                 <div className="space-y-4 pt-4">
                   <div>
-                    <h4 className="text-sm font-medium mb-1">Fit Summary</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {entry.result.fit_summary}
+                    <h4 className="text-sm font-medium mb-1">Fit Summary ({entry.result.fit.fit_rating})</h4>
+                    <p className="text-sm text-muted-foreground">
+                      {entry.result.fit.summary}
                     </p>
                   </div>
 
                   <div>
                     <h4 className="text-sm font-medium mb-1">
-                      Resume Improvements
+                      Resume Summary
                     </h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {entry.result.resume_improvements}
+                    <p className="text-sm text-muted-foreground italic">
+                      {entry.result.resume.professional_summary}
                     </p>
                   </div>
 
                   <div>
                     <h4 className="text-sm font-medium mb-1">Outreach Message</h4>
-                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {entry.result.outreach_message}
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap font-mono text-xs">
+                      {entry.result.outreach.message}
                     </p>
                   </div>
 
                   <div>
                     <h4 className="text-sm font-medium mb-1">Cover Letter</h4>
-                    <div className="bg-secondary/50 rounded-lg p-4 text-sm whitespace-pre-wrap">
-                      {entry.result.cover_letter}
+                    <div className="bg-secondary/50 rounded-lg p-3 text-sm whitespace-pre-wrap font-serif">
+                      {entry.result.cover_letter.opening_paragraph.substring(0, 150)}...
                     </div>
                   </div>
                 </div>

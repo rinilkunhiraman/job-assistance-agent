@@ -17,6 +17,11 @@ export const jobFormSchema = z.object({
     .string()
     .min(100, "Job description must be at least 100 characters."),
   target_role: z.string().min(2, "Target role must be at least 2 characters."),
+  company_name: z
+    .string()
+    .max(120, "Company name must be 120 characters or fewer.")
+    .optional()
+    .or(z.literal("")),
   experience_level: z.enum(EXPERIENCE_LEVELS),
   tone: z.enum(TONES),
   achievements: z
@@ -29,15 +34,46 @@ export const jobFormSchema = z.object({
 export type JobRequest = z.infer<typeof jobFormSchema>;
 export type FormState = z.infer<typeof jobFormSchema>;
 
+export type FitAnalysisOutput = {
+  fit_rating: string;
+  fit_justification: string;
+  summary: string;
+  matched_skills: string[];
+  missing_skills: string[];
+  seniority_gap: boolean;
+  seniority_note: string | null;
+};
+
+export type ResumeOptimizationOutput = {
+  ats_keywords: string[];
+  professional_summary: string;
+  skills: Record<string, string[]>;
+  experience_bullets: Record<string, string[]>;
+  improvement_notes: string[];
+};
+
+export type OutreachOutput = {
+  message: string;
+  company_name: string | null;
+  hook_skills: string[];
+};
+
+export type CoverLetterOutput = {
+  salutation: string;
+  opening_paragraph: string;
+  body_paragraph_1: string;
+  body_paragraph_2: string;
+  closing_paragraph: string;
+  sign_off: string;
+  company_name: string;
+  word_count: number;
+};
+
 export type JobResponse = {
-  fit_summary: string;
-  resume_improvements: string;
-  outreach_message: string;
-  cover_letter: string;
-  keywords: {
-    matched: string[];
-    missing: string[];
-  };
+  fit: FitAnalysisOutput;
+  resume: ResumeOptimizationOutput;
+  outreach: OutreachOutput;
+  cover_letter: CoverLetterOutput;
 };
 
 export type ApiErrorResponse = {
@@ -50,6 +86,7 @@ export function getInitialFormState(): FormState {
     resume: "",
     job_description: "",
     target_role: "",
+    company_name: "",
     experience_level: "" as any,
     tone: "" as any,
     achievements: "",
@@ -64,6 +101,7 @@ export function toJobRequest(form: FormState): JobRequest {
     resume: form.resume,
     job_description: form.job_description,
     target_role: form.target_role,
+    company_name: form.company_name?.trim() || undefined,
     experience_level: form.experience_level,
     tone: form.tone,
     achievements: form.achievements?.trim() || undefined,

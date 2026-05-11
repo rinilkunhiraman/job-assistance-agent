@@ -67,6 +67,7 @@ def _tone_context(tone: str) -> str:
 
 def build_fit_task(agent: Agent, req: JobRequest) -> Task:
     experience_note = _experience_context(req.experience_level)
+    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
 
     return Task(
         description=f"""
@@ -77,6 +78,7 @@ Your goal is an honest, evidence-based assessment — not a sales pitch.
 CANDIDATE CONTEXT
 {SECTION_SEP}
 {experience_note}
+{company_note}
 
 {SECTION_SEP}
 JOB DESCRIPTION
@@ -134,8 +136,22 @@ Rules:
     )
 
 
-def build_resume_task(agent: Agent, req: JobRequest) -> Task:
+def build_resume_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
+    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
+    
+    fit_note = ""
+    if fit_context:
+        fit_note = f"""
+{SECTION_SEP}
+FIT ANALYSIS CONTEXT
+{SECTION_SEP}
+The technical fit evaluator found these matched skills: {', '.join(fit_context.matched_skills)}
+The candidate is missing these skills: {', '.join(fit_context.missing_skills)}
+Fit Rating: {fit_context.fit_rating}
+Fit Justification: {fit_context.fit_justification}
+Summary: {fit_context.summary}
+"""
 
     return Task(
         description=f"""
@@ -146,6 +162,8 @@ Rewrite and improve this candidate's resume content for the specific job below.
 CANDIDATE CONTEXT
 {SECTION_SEP}
 {experience_note}
+{company_note}
+{fit_note}
 
 {SECTION_SEP}
 JOB DESCRIPTION
@@ -210,9 +228,20 @@ Rules:
     )
 
 
-def build_outreach_task(agent: Agent, req: JobRequest) -> Task:
+def build_outreach_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
     tone_note = _tone_context(req.tone)
+    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
+    
+    fit_note = ""
+    if fit_context:
+        fit_note = f"""
+{SECTION_SEP}
+FIT ANALYSIS CONTEXT
+{SECTION_SEP}
+Matched skills to highlight: {', '.join(fit_context.matched_skills)}
+Fit Summary: {fit_context.summary}
+"""
 
     return Task(
         description=f"""
@@ -225,6 +254,8 @@ CANDIDATE CONTEXT
 {SECTION_SEP}
 {experience_note}
 {tone_note}
+{company_note}
+{fit_note}
 
 {SECTION_SEP}
 JOB DESCRIPTION
@@ -275,9 +306,22 @@ Rules:
     )
 
 
-def build_cover_task(agent: Agent, req: JobRequest) -> Task:
+def build_cover_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
     tone_note = _tone_context(req.tone)
+    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
+    
+    fit_note = ""
+    if fit_context:
+        fit_note = f"""
+{SECTION_SEP}
+FIT ANALYSIS CONTEXT
+{SECTION_SEP}
+Matched skills to highlight: {', '.join(fit_context.matched_skills)}
+Gaps to potentially address or pivot away from: {', '.join(fit_context.missing_skills)}
+Fit Rating: {fit_context.fit_rating}
+Fit Summary: {fit_context.summary}
+"""
 
     return Task(
         description=f"""
@@ -290,6 +334,8 @@ CANDIDATE CONTEXT
 {SECTION_SEP}
 {experience_note}
 {tone_note}
+{company_note}
+{fit_note}
 
 {SECTION_SEP}
 JOB DESCRIPTION

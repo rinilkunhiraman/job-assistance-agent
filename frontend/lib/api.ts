@@ -50,7 +50,7 @@ export async function runJobPipeline(
       throw new ApiError(error, code, response.status);
     }
 
-    if (!body || !("fit_summary" in body)) {
+    if (!body || !("fit" in body)) {
       throw new ApiError(
         "The backend returned an invalid response payload.",
         "invalid_response",
