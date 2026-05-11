@@ -47,13 +47,15 @@ python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install fastapi crewai pydantic uvicorn
-
-# Create .env file (optional - defaults work for local)
-# echo "OLLAMA_MODEL=ollama/gemma4:31b" > .env
+pip install -r requirements.txt
 
 # Run the backend
 uvicorn app.main:app --reload
+```
+
+Alternatively, from the project root:
+```bash
+PYTHONPATH=backend uvicorn app.main:app --reload
 ```
 
 The backend runs at **http://localhost:8000**
@@ -98,8 +100,9 @@ job-application-agent/
 │   │   ├── core/        # Config & exceptions
 │   │   ├── schemas/     # Pydantic models
 │   │   ├── services/    # Pipeline execution
-│   │   └── tasks/       # Task definitions
-│   └── main.py          # FastAPI app entry
+│   │   ├── tasks/       # Task definitions
+│   │   └── main.py      # FastAPI app entry
+│   └── requirements.txt  # Python dependencies
 ├── frontend/            # Next.js frontend
 │   ├── app/             # App router pages
 │   ├── components/     # React components
