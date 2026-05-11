@@ -74,6 +74,17 @@ export default function History() {
                         </span>
                       )}
                     </span>
+                    {entry.fit_rating && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto ${
+                            entry.fit_rating.includes("Strong") 
+                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                                : entry.fit_rating.includes("Moderate")
+                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}>
+                            {entry.fit_rating.toUpperCase()}
+                        </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground ml-6">
                     <span className="px-2 py-0.5 bg-secondary rounded text-xs">

@@ -20,6 +20,7 @@ interface HistoryEntry {
   experience_level: string;
   tone: string;
   company_name: string | null;
+  fit_rating: string | null;
   result: JobResponse;
 }
 
@@ -35,6 +36,7 @@ interface JobStatus {
   duration: number | null;
   result: JobResponse | null;
   errorMessage: string | null;
+  progressMessage: string | null;
 }
 
 interface JobState {
@@ -60,6 +62,7 @@ interface JobState {
     loadResume: (id: string) => void;
     deleteResume: (id: string) => void;
     startJob: () => void;
+    updateProgress: (message: string) => void;
     endJob: (
       result: JobResponse | null,
       error: string | null,
@@ -130,6 +133,7 @@ export const useJobStore = create<JobState>()(
         duration: null,
         result: null,
         errorMessage: null,
+        progressMessage: null,
       },
       actions: {
         setFieldValue: (field, value) =>
@@ -181,14 +185,21 @@ export const useJobStore = create<JobState>()(
               duration: null,
               result: null,
               errorMessage: null,
+              progressMessage: "Initializing...",
             },
           }),
+
+        updateProgress: (message) =>
+          set((state) => ({
+            jobStatus: { ...state.jobStatus, progressMessage: message },
+          })),
 
         endJob: (result, error, duration) => {
           // Auto-save to history on successful result
           if (result) {
             const { target_role, experience_level, tone, job_description, company_name: provided_company } = get().formValues;
             const company_name = provided_company || extractCompanyName(job_description || "");
+            const fit_rating = result.fit.fit_rating;
             const historyId = crypto.randomUUID();
             set((state) => ({
               jobStatus: {
@@ -196,6 +207,7 @@ export const useJobStore = create<JobState>()(
                 duration,
                 result,
                 errorMessage: error,
+                progressMessage: null,
               },
               history: [
                 {
@@ -205,6 +217,7 @@ export const useJobStore = create<JobState>()(
                   experience_level,
                   tone,
                   company_name,
+                  fit_rating,
                   result,
                 },
                 ...state.history,
@@ -217,6 +230,7 @@ export const useJobStore = create<JobState>()(
                 duration,
                 result,
                 errorMessage: error,
+                progressMessage: null,
               },
             });
           }
