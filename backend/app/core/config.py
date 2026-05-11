@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 from functools import lru_cache
+from typing import Optional
 
 
 def _get_bool(name: str, default: bool) -> bool:
@@ -14,7 +15,10 @@ def _get_int(name: str, default: int) -> int:
     value = os.getenv(name)
     if value is None:
         return default
-    return int(value)
+    try:
+        return int(value)
+    except ValueError:
+        return default
 
 
 def _get_origins(name: str, default: tuple[str, ...]) -> tuple[str, ...]:
@@ -35,8 +39,14 @@ class Settings:
     log_level: str
     cors_origins: tuple[str, ...]
     cors_allow_credentials: bool
-    ollama_model: str
-    ollama_base_url: str
+    
+    # LLM Settings (Unified for all providers)
+    llm_model: str
+    llm_base_url: Optional[str]
+    openai_api_key: Optional[str]
+    anthropic_api_key: Optional[str]
+    google_api_key: Optional[str]
+    
     crew_verbose: bool
     min_resume_chars: int
     min_job_description_chars: int
@@ -61,10 +71,14 @@ def get_settings() -> Settings:
         cors_allow_credentials=_get_bool(
             "CORS_ALLOW_CREDENTIALS", True
         ),
-        ollama_model=os.getenv("OLLAMA_MODEL", "ollama/gemma4:31b-cloud"),
-        ollama_base_url=os.getenv(
-            "OLLAMA_BASE_URL", "http://localhost:11434"
-        ),
+        
+        # LLM Defaults
+        llm_model=os.getenv("LLM_MODEL", "ollama/gemma4:31b-cloud"),
+        llm_base_url=os.getenv("LLM_BASE_URL", "http://localhost:11434"),
+        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        anthropic_api_key=os.getenv("ANTHROPIC_API_KEY"),
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+
         crew_verbose=_get_bool(
             "CREW_VERBOSE",
             os.getenv("APP_ENV", "development").lower() == "development",

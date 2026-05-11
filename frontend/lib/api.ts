@@ -17,9 +17,16 @@ export class ApiError extends Error {
   }
 }
 
-export async function runJobPipeline(
+interface StreamCallbacks {
+  onProgress: (message: string) => void;
+  onError: (error: string) => void;
+  onSuccess: (data: JobResponse) => void;
+}
+
+export async function runJobPipelineStream(
   payload: JobRequest,
-): Promise<JobResponse> {
+  callbacks: StreamCallbacks
+): Promise<void> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
@@ -33,42 +40,64 @@ export async function runJobPipeline(
       signal: controller.signal,
     });
 
-    const body = (await response.json().catch((err) => {
-      throw new ApiError(
-        `Failed to parse response JSON: ${err instanceof Error ? err.message : "Unknown error"}`,
-        "json_parse_error",
-        response.status,
-      );
-    })) as JobResponse | ApiErrorResponse | null;
-
     if (!response.ok) {
-      const error =
-        body && "error" in body
-          ? body.error
-          : "The backend returned an unexpected error.";
-      const code = body && "code" in body ? body.code : "unknown_error";
-      throw new ApiError(error, code, response.status);
+        const body = await response.json().catch(() => ({}));
+        const error = body?.error || "The backend returned an unexpected error.";
+        throw new ApiError(error, body?.code || "unknown_error", response.status);
     }
 
-    if (!body || !("fit" in body)) {
-      throw new ApiError(
-        "The backend returned an invalid response payload.",
-        "invalid_response",
-        502,
-      );
+    if (!response.body) {
+        throw new ApiError("No response body available.", "no_body", 500);
     }
 
-    return body;
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Split by JSON objects if multiple are sent in one chunk or across chunks
+        // This is a simple parser for sequential JSON objects
+        let boundary = buffer.indexOf('}{');
+        while (boundary !== -1) {
+            const part = buffer.slice(0, boundary + 1);
+            buffer = buffer.slice(boundary + 1);
+            handleChunk(part, callbacks);
+            boundary = buffer.indexOf('}{');
+        }
+    }
+    
+    // Final chunk
+    if (buffer.trim()) {
+        handleChunk(buffer, callbacks);
+    }
+
   } catch (err) {
     if (err instanceof Error && err.name === "AbortError") {
-      throw new ApiError(
-        "The request timed out after 10 minutes.",
-        "request_timeout",
-        408,
-      );
+        callbacks.onError("The request timed out after 10 minutes.");
+    } else {
+        callbacks.onError(err instanceof Error ? err.message : "An unknown error occurred.");
     }
-    throw err;
   } finally {
     clearTimeout(timeoutId);
   }
+}
+
+function handleChunk(chunk: string, callbacks: StreamCallbacks) {
+    try {
+        const payload = JSON.parse(chunk);
+        if (payload.type === "progress") {
+            callbacks.onProgress(payload.message);
+        } else if (payload.type === "error") {
+            callbacks.onError(payload.message);
+        } else if (payload.type === "final_result") {
+            callbacks.onSuccess(payload.data);
+        }
+    } catch (e) {
+        console.error("Failed to parse chunk:", chunk, e);
+    }
 }

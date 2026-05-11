@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import History from "@/components/job/History";
 import JobForm from "@/components/job/JobForm";
 import JobResult from "@/components/job/JobResult";
-import { ApiError, runJobPipeline } from "@/lib/api";
+import { runJobPipelineStream } from "@/lib/api";
 import type { JobRequest } from "@/lib/job";
 import { useJobStore } from "@/store/useJobStore";
 
@@ -13,7 +13,7 @@ type Tab = "new" | "history";
 
 export default function Home() {
   const { jobStatus, actions, history } = useJobStore();
-  const { isPending, duration, errorMessage } = jobStatus;
+  const { isPending, duration, errorMessage, progressMessage } = jobStatus;
   const startTimeRef = useRef<number | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("new");
@@ -48,22 +48,23 @@ export default function Home() {
   const runPipeline = async (payload: JobRequest) => {
     actions.startJob();
 
-    try {
-      const data = await runJobPipeline(payload);
-      const finalDuration = startTimeRef.current
-        ? Date.now() - startTimeRef.current
-        : 0;
-      actions.endJob(data, null, finalDuration);
-    } catch (error) {
-      const errorMsg =
-        error instanceof ApiError
-          ? error.message
-          : "Unable to connect to the backend. Check that the API is running.";
-      const finalDuration = startTimeRef.current
-        ? Date.now() - startTimeRef.current
-        : 0;
-      actions.endJob(null, errorMsg, finalDuration);
-    }
+    await runJobPipelineStream(payload, {
+        onProgress: (message) => {
+            actions.updateProgress(message);
+        },
+        onError: (error) => {
+            const finalDuration = startTimeRef.current
+                ? Date.now() - startTimeRef.current
+                : 0;
+            actions.endJob(null, error, finalDuration);
+        },
+        onSuccess: (data) => {
+            const finalDuration = startTimeRef.current
+                ? Date.now() - startTimeRef.current
+                : 0;
+            actions.endJob(data, null, finalDuration);
+        }
+    });
   };
 
   return (
@@ -130,31 +131,42 @@ export default function Home() {
           )}
 
           {isPending && (
-            <div className="space-y-2">
-              <p className="text-sm text-amber-600 font-medium">
-                Generating application materials...
-              </p>
+            <div className="space-y-4 p-4 bg-muted/30 rounded-2xl border border-dashed animate-pulse">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-primary">
+                  {progressMessage || "Generating application materials..."}
+                </p>
+                {duration && (
+                    <span className="text-xs font-mono text-muted-foreground">
+                        {formatDuration(duration)}
+                    </span>
+                )}
+              </div>
+              
+              <div className="w-full bg-secondary h-1.5 rounded-full overflow-hidden">
+                <div className="bg-primary h-full animate-progress-indeterminate" />
+              </div>
+
               <div className="flex flex-wrap gap-2">
                 {[
-                  { key: "fit", label: "Fit Analysis" },
-                  { key: "resume", label: "Resume Optimization" },
-                  { key: "outreach", label: "Outreach Message" },
-                  { key: "cover", label: "Cover Letter" },
+                  { key: "fit", label: "Fit Analysis", done: progressMessage?.includes("Fit analysis complete") || progressMessage?.includes("Optimizing") || progressMessage?.includes("Resume") || progressMessage?.includes("Outreach") || progressMessage?.includes("Cover") },
+                  { key: "resume", label: "Resume Optimization", done: progressMessage?.includes("Resume optimization complete") },
+                  { key: "outreach", label: "Outreach Message", done: progressMessage?.includes("Outreach message complete") },
+                  { key: "cover", label: "Cover Letter", done: progressMessage?.includes("Cover letter complete") },
                 ].map((task) => (
                   <span
                     key={task.key}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs bg-secondary rounded-full text-muted-foreground"
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-full transition-colors ${
+                      task.done 
+                        ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" 
+                        : "bg-secondary text-muted-foreground"
+                    }`}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span className={`w-1.5 h-1.5 rounded-full ${task.done ? "bg-green-500" : "bg-amber-500 animate-pulse"}`} />
                     {task.label}
                   </span>
                 ))}
               </div>
-              {duration && (
-                <p className="text-xs text-muted-foreground">
-                  {formatDuration(duration)}
-                </p>
-              )}
             </div>
           )}
 
