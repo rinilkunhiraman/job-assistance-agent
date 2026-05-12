@@ -19,6 +19,8 @@ interface HistoryEntry {
   target_role: string;
   experience_level: string;
   tone: string;
+  resume: string;
+  job_description: string;
   company_name: string | null;
   fit_rating: string | null;
   result: JobResponse;
@@ -197,10 +199,19 @@ export const useJobStore = create<JobState>()(
         endJob: (result, error, duration) => {
           // Auto-save to history on successful result
           if (result) {
-            const { target_role, experience_level, tone, job_description, company_name: provided_company } = get().formValues;
+            const { 
+              target_role, 
+              experience_level, 
+              tone, 
+              resume,
+              job_description, 
+              company_name: provided_company 
+            } = get().formValues;
+            
             const company_name = provided_company || extractCompanyName(job_description || "");
             const fit_rating = result.fit.fit_rating;
             const historyId = crypto.randomUUID();
+            
             set((state) => ({
               jobStatus: {
                 isPending: false,
@@ -216,6 +227,8 @@ export const useJobStore = create<JobState>()(
                   target_role,
                   experience_level,
                   tone,
+                  resume,
+                  job_description,
                   company_name,
                   fit_rating,
                   result,
