@@ -31,7 +31,7 @@ Before running the project, ensure you have:
 
 ```bash
 # Pull the required model (first time only)
-ollama pull gemma4:31b
+ollama pull gemma4:31b-cloud
 
 # Start Ollama server (runs on port 11434 by default)
 ollama serve
@@ -80,8 +80,8 @@ The frontend runs at **http://localhost:3000**
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OLLAMA_MODEL` | `ollama/gemma4:31b` | Model to use |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama API endpoint |
+| `LLM_MODEL` | `ollama/gemma4:31b-cloud` | Model to use (Ollama, OpenAI, Anthropic, Gemini) |
+| `LLM_BASE_URL` | `http://localhost:11434` | Base URL for LLM provider (mainly for Ollama) |
 | `CORS_ORIGINS` | `http://localhost:3000,http://127.0.0.1:3000` | Allowed frontend origins |
 | `APP_ENV` | `development` | Environment (development/production) |
 
@@ -121,9 +121,9 @@ Error: Unable to connect to Ollama at http://localhost:11434
 
 ### Model not found
 ```
-Error: model 'gemma4:31b' not found
+Error: model 'gemma4:31b-cloud' not found
 ```
-**Fix:** Run `ollama pull gemma4:31b`
+**Fix:** Run `ollama pull gemma4:31b-cloud`
 
 ### CORS errors
 **Fix:** Ensure `CORS_ORIGINS` in backend config includes your frontend URL.
