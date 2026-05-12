@@ -88,28 +88,40 @@ function extractCompanyName(jobDescription: string): string | null {
   const text = jobDescription.trim();
 
   // Pattern 1: "at CompanyName" (common in job titles)
-  const atMatch = text.match(/\bat\s+([A-Za-z][A-Za-z0-9\s&'()-]*?)(?:[,.\n]|$)/i);
+  const atMatch = text.match(
+    /\bat\s+([A-Za-z][A-Za-z0-9\s&'()-]*?)(?:[,.\n]|$)/i,
+  );
   if (atMatch && atMatch[1].trim().length > 1) {
     return atMatch[1].trim();
   }
 
   // Pattern 2: Company/Employer/Organization: Name
-  const labelMatch = text.match(/(?:company|employer|organization|hiring for|with)\s*[:\s]+([A-Za-z][A-Za-z0-9\s&'()-]*?)(?:[,.\n]|$)/i);
+  const labelMatch = text.match(
+    /(?:company|employer|organization|hiring for|with)\s*[:\s]+([A-Za-z][A-Za-z0-9\s&'()-]*?)(?:[,.\n]|$)/i,
+  );
   if (labelMatch && labelMatch[1].trim().length > 1) {
     return labelMatch[1].trim();
   }
 
   // Pattern 3: First line often contains company name in job descriptions
-  const firstLine = text.split('\n')[0];
+  const firstLine = text.split("\n")[0];
   if (firstLine && firstLine.length < 100) {
-    const cleanFirstLine = firstLine.replace(/^(job title|position|role)[:\s]*/i, '').trim();
-    if (cleanFirstLine && cleanFirstLine.length > 2 && !cleanFirstLine.includes('.')) {
+    const cleanFirstLine = firstLine
+      .replace(/^(job title|position|role)[:\s]*/i, "")
+      .trim();
+    if (
+      cleanFirstLine &&
+      cleanFirstLine.length > 2 &&
+      !cleanFirstLine.includes(".")
+    ) {
       return cleanFirstLine;
     }
   }
 
   // Pattern 4: Look for "Join" or "We're" phrases
-  const joinMatch = text.match(/(?:join|we're|we are|at)\s+([A-Z][A-Za-z0-9\s&'()-]+)/i);
+  const joinMatch = text.match(
+    /(?:join|we're|we are|at)\s+([A-Z][A-Za-z0-9\s&'()-]+)/i,
+  );
   if (joinMatch && joinMatch[1].trim().length > 1) {
     return joinMatch[1].trim();
   }
@@ -199,19 +211,20 @@ export const useJobStore = create<JobState>()(
         endJob: (result, error, duration) => {
           // Auto-save to history on successful result
           if (result) {
-            const { 
-              target_role, 
-              experience_level, 
-              tone, 
+            const {
+              target_role,
+              experience_level,
+              tone,
               resume,
-              job_description, 
-              company_name: provided_company 
+              job_description,
+              company_name: provided_company,
             } = get().formValues;
-            
-            const company_name = provided_company || extractCompanyName(job_description || "");
+
+            const company_name =
+              provided_company || extractCompanyName(job_description || "");
             const fit_rating = result.fit.fit_rating;
             const historyId = crypto.randomUUID();
-            
+
             set((state) => ({
               jobStatus: {
                 isPending: false,
@@ -296,8 +309,7 @@ export const useJobStore = create<JobState>()(
           set((state) => ({
             ui: {
               ...state.ui,
-              expandedHistoryId:
-                state.ui.expandedHistoryId === id ? null : id,
+              expandedHistoryId: state.ui.expandedHistoryId === id ? null : id,
             },
           })),
       },

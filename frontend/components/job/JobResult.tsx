@@ -87,7 +87,13 @@ function MarkdownView({ content }: { content: string }) {
   );
 }
 
-function SkillBadge({ name, type }: { name: string; type: "matched" | "missing" }) {
+function SkillBadge({
+  name,
+  type,
+}: {
+  name: string;
+  type: "matched" | "missing";
+}) {
   return (
     <span
       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium mr-2 mb-2 ${
@@ -114,14 +120,17 @@ export default function JobResult() {
   }
 
   const getRatingIcon = (rating: string) => {
-    if (rating.includes("Strong")) return <CheckCircle className="w-6 h-6 text-green-500" />;
-    if (rating.includes("Moderate")) return <AlertTriangle className="w-6 h-6 text-yellow-500" />;
+    if (rating.includes("Strong"))
+      return <CheckCircle className="w-6 h-6 text-green-500" />;
+    if (rating.includes("Moderate"))
+      return <AlertTriangle className="w-6 h-6 text-yellow-500" />;
     return <XCircle className="w-6 h-6 text-red-500" />;
   };
 
   const getRatingColor = (rating: string) => {
     if (rating.includes("Strong")) return "text-green-600 dark:text-green-400";
-    if (rating.includes("Moderate")) return "text-yellow-600 dark:text-yellow-400";
+    if (rating.includes("Moderate"))
+      return "text-yellow-600 dark:text-yellow-400";
     return "text-red-600 dark:text-red-400";
   };
 
@@ -140,7 +149,9 @@ export default function JobResult() {
             <CardTitle className="text-xl font-bold">Job Fit Check</CardTitle>
             <div className="flex items-center gap-2">
               {getRatingIcon(result.fit.fit_rating)}
-              <span className={`font-bold ${getRatingColor(result.fit.fit_rating)}`}>
+              <span
+                className={`font-bold ${getRatingColor(result.fit.fit_rating)}`}
+              >
                 {result.fit.fit_rating}
               </span>
             </div>
@@ -151,7 +162,9 @@ export default function JobResult() {
             </div>
 
             <div className="space-y-4">
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Analysis Summary</h4>
+              <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">
+                Analysis Summary
+              </h4>
               <div className="text-sm leading-relaxed">
                 <MarkdownView content={result.fit.summary} />
               </div>
@@ -161,8 +174,12 @@ export default function JobResult() {
               <div className="flex items-start gap-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-900/50 rounded-lg">
                 <AlertTriangle className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
                 <div className="text-sm">
-                  <span className="font-bold text-yellow-800 dark:text-yellow-400">Seniority Alignment Note:</span>
-                  <p className="text-yellow-700 dark:text-yellow-300 mt-0.5">{result.fit.seniority_note}</p>
+                  <span className="font-bold text-yellow-800 dark:text-yellow-400">
+                    Seniority Alignment Note:
+                  </span>
+                  <p className="text-yellow-700 dark:text-yellow-300 mt-0.5">
+                    {result.fit.seniority_note}
+                  </p>
                 </div>
               </div>
             )}
@@ -174,10 +191,18 @@ export default function JobResult() {
                   Matched Skills
                 </h4>
                 <div className="flex flex-wrap">
-                  {result.fit.matched_skills.map((skill, i) => (
-                    <SkillBadge key={i} name={skill} type="matched" />
+                  {result.fit.matched_skills.map((skill) => (
+                    <SkillBadge
+                      key={`matched-${skill}`}
+                      name={skill}
+                      type="matched"
+                    />
                   ))}
-                  {result.fit.matched_skills.length === 0 && <p className="text-sm text-muted-foreground italic">No clear matches found.</p>}
+                  {result.fit.matched_skills.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic">
+                      No clear matches found.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -187,10 +212,18 @@ export default function JobResult() {
                   Missing Skills
                 </h4>
                 <div className="flex flex-wrap">
-                  {result.fit.missing_skills.map((skill, i) => (
-                    <SkillBadge key={i} name={skill} type="missing" />
+                  {result.fit.missing_skills.map((skill) => (
+                    <SkillBadge
+                      key={`missing-${skill}`}
+                      name={skill}
+                      type="missing"
+                    />
                   ))}
-                  {result.fit.missing_skills.length === 0 && <p className="text-sm text-muted-foreground italic">No significant gaps identified.</p>}
+                  {result.fit.missing_skills.length === 0 && (
+                    <p className="text-sm text-muted-foreground italic">
+                      No significant gaps identified.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -206,14 +239,19 @@ export default function JobResult() {
           <CardContent className="space-y-6 p-6">
             <div className="space-y-2">
               <h4 className="font-bold text-lg">Optimized Summary</h4>
-              <p className="text-sm leading-relaxed">{result.resume.professional_summary}</p>
+              <p className="text-sm leading-relaxed">
+                {result.resume.professional_summary}
+              </p>
             </div>
-            
+
             <div className="space-y-3">
               <h4 className="font-bold text-lg">ATS Keywords to Include</h4>
               <div className="flex flex-wrap gap-2">
-                {result.resume.ats_keywords.map((kw, i) => (
-                  <span key={i} className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-mono">
+                {result.resume.ats_keywords.map((kw) => (
+                  <span
+                    key={`kw-${kw}`}
+                    className="px-2 py-1 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-mono"
+                  >
                     {kw}
                   </span>
                 ))}
@@ -221,23 +259,35 @@ export default function JobResult() {
             </div>
 
             <div className="space-y-4 pt-4 border-t">
-              <h4 className="font-bold text-lg">Experience Bullet Improvements</h4>
-              {Object.entries(result.resume.experience_bullets).map(([role, bullets], i) => (
-                <div key={i} className="space-y-2">
-                  <h5 className="font-semibold text-sm text-muted-foreground underline decoration-primary/30 underline-offset-4">{role}</h5>
-                  <ul className="list-disc pl-5 space-y-1">
-                    {bullets.map((bullet, j) => (
-                      <li key={j} className="text-sm">{bullet}</li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+              <h4 className="font-bold text-lg">
+                Experience Bullet Improvements
+              </h4>
+              {Object.entries(result.resume.experience_bullets).map(
+                ([role, bullets]) => (
+                  <div key={`role-${role}`} className="space-y-2">
+                    <h5 className="font-semibold text-sm text-muted-foreground underline decoration-primary/30 underline-offset-4">
+                      {role}
+                    </h5>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {bullets.map((bullet, j) => (
+                        <li key={`bullet-${role}-${j}`} className="text-sm">
+                          {bullet}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ),
+              )}
             </div>
 
             {result.resume.improvement_notes.length > 0 && (
               <div className="mt-4 p-3 bg-muted rounded-lg text-xs space-y-1">
-                <p className="font-bold uppercase tracking-tighter text-[10px] text-muted-foreground">Improvement Notes</p>
-                {result.resume.improvement_notes.map((note, i) => <p key={i}>• {note}</p>)}
+                <p className="font-bold uppercase tracking-tighter text-[10px] text-muted-foreground">
+                  Improvement Notes
+                </p>
+                {result.resume.improvement_notes.map((note) => (
+                  <p key={`note-${note.substring(0, 20)}`}>• {note}</p>
+                ))}
               </div>
             )}
           </CardContent>
@@ -253,17 +303,24 @@ export default function JobResult() {
             <div className="flex items-center justify-between">
               <h4 className="font-bold text-lg">Cold Outreach Message</h4>
               {result.outreach.company_name && (
-                <span className="text-xs px-2 py-1 bg-muted rounded font-medium">Target: {result.outreach.company_name}</span>
+                <span className="text-xs px-2 py-1 bg-muted rounded font-medium">
+                  Target: {result.outreach.company_name}
+                </span>
               )}
             </div>
             <div className="p-4 bg-muted/30 rounded-lg border whitespace-pre-wrap text-sm leading-relaxed font-serif italic">
               {result.outreach.message}
             </div>
             <div className="space-y-2">
-              <p className="text-xs font-bold text-muted-foreground uppercase">Hook Strategy</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase">
+                Hook Strategy
+              </p>
               <div className="flex gap-2">
-                {result.outreach.hook_skills.map((skill, i) => (
-                  <span key={i} className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded text-[10px] font-bold">
+                {result.outreach.hook_skills.map((skill) => (
+                  <span
+                    key={`hook-${skill}`}
+                    className="px-2 py-1 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 rounded text-[10px] font-bold"
+                  >
                     {skill.toUpperCase()}
                   </span>
                 ))}
@@ -276,23 +333,33 @@ export default function JobResult() {
       <TabsContent value="cover">
         <Card className="relative">
           <div className="absolute top-4 right-4 z-10">
-            <CopyButton text={`${result.cover_letter.salutation}\n\n${result.cover_letter.opening_paragraph}\n\n${result.cover_letter.body_paragraph_1}\n\n${result.cover_letter.body_paragraph_2}\n\n${result.cover_letter.closing_paragraph}\n\n${result.cover_letter.sign_off}`} />
+            <CopyButton
+              text={`${result.cover_letter.salutation}\n\n${result.cover_letter.opening_paragraph}\n\n${result.cover_letter.body_paragraph_1}\n\n${result.cover_letter.body_paragraph_2}\n\n${result.cover_letter.closing_paragraph}\n\n${result.cover_letter.sign_off}`}
+            />
           </div>
           <CardContent className="p-8 space-y-6 font-serif max-w-2xl mx-auto">
             <div className="space-y-1 text-right text-sm text-muted-foreground italic">
               Word Count: {result.cover_letter.word_count}
             </div>
-            
+
             <p>{result.cover_letter.salutation}</p>
-            
-            <p className="leading-relaxed">{result.cover_letter.opening_paragraph}</p>
-            
-            <p className="leading-relaxed">{result.cover_letter.body_paragraph_1}</p>
-            
-            <p className="leading-relaxed">{result.cover_letter.body_paragraph_2}</p>
-            
-            <p className="leading-relaxed">{result.cover_letter.closing_paragraph}</p>
-            
+
+            <p className="leading-relaxed">
+              {result.cover_letter.opening_paragraph}
+            </p>
+
+            <p className="leading-relaxed">
+              {result.cover_letter.body_paragraph_1}
+            </p>
+
+            <p className="leading-relaxed">
+              {result.cover_letter.body_paragraph_2}
+            </p>
+
+            <p className="leading-relaxed">
+              {result.cover_letter.closing_paragraph}
+            </p>
+
             <div className="pt-4">
               <p>{result.cover_letter.sign_off}</p>
               <p className="font-bold mt-1 text-lg">[Your Name]</p>

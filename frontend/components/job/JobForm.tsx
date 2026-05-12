@@ -130,7 +130,9 @@ export default function JobForm({
       <CardContent className="p-4 sm:p-6">
         <form className="space-y-5" onSubmit={handleSubmit}>
           <div className="space-y-1">
-            <h2 className="text-xl font-semibold font-heading">Application Inputs</h2>
+            <h2 className="text-xl font-semibold font-heading">
+              Application Inputs
+            </h2>
             <p className="text-sm text-muted-foreground">
               Paste the full resume and full job description, then choose the
               tone you want the AI to use.

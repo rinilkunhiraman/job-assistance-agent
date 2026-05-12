@@ -1,6 +1,16 @@
 "use client";
 
-import { ChevronDown, ChevronRight, Trash2, Clock, CheckCircle, XCircle, AlertTriangle, Copy, Check } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Trash2,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Copy,
+  Check,
+} from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -41,7 +51,13 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-function SkillBadge({ name, type }: { name: string; type: "matched" | "missing" }) {
+function SkillBadge({
+  name,
+  type,
+}: {
+  name: string;
+  type: "matched" | "missing";
+}) {
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium mr-1.5 mb-1.5 ${
@@ -76,8 +92,10 @@ export default function History() {
   };
 
   const getRatingIcon = (rating: string) => {
-    if (rating.includes("Strong")) return <CheckCircle className="w-4 h-4 text-green-500" />;
-    if (rating.includes("Moderate")) return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
+    if (rating.includes("Strong"))
+      return <CheckCircle className="w-4 h-4 text-green-500" />;
+    if (rating.includes("Moderate"))
+      return <AlertTriangle className="w-4 h-4 text-yellow-500" />;
     return <XCircle className="w-4 h-4 text-red-500" />;
   };
 
@@ -142,16 +160,18 @@ export default function History() {
                       )}
                     </span>
                     {entry.fit_rating && (
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto flex items-center gap-1 ${
-                            entry.fit_rating.includes("Strong") 
-                                ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                                : entry.fit_rating.includes("Moderate")
-                                ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                        }`}>
-                            {getRatingIcon(entry.fit_rating)}
-                            {entry.fit_rating.toUpperCase()}
-                        </span>
+                      <span
+                        className={`text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto flex items-center gap-1 ${
+                          entry.fit_rating.includes("Strong")
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                            : entry.fit_rating.includes("Moderate")
+                              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                        }`}
+                      >
+                        {getRatingIcon(entry.fit_rating)}
+                        {entry.fit_rating.toUpperCase()}
+                      </span>
                     )}
                   </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground ml-6">
@@ -161,7 +181,9 @@ export default function History() {
                     <span className="px-2 py-0.5 bg-secondary rounded text-xs">
                       {entry.tone}
                     </span>
-                    <span className="text-xs">{formatDate(entry.createdAt)}</span>
+                    <span className="text-xs">
+                      {formatDate(entry.createdAt)}
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -184,11 +206,36 @@ export default function History() {
               <div className="px-4 pb-4 pt-0 border-t border-border/50 animate-in slide-in-from-top-1 duration-200">
                 <Tabs defaultValue="fit" className="mt-4">
                   <TabsList className="grid w-full grid-cols-5 h-8">
-                    <TabsTrigger value="fit" className="text-[10px] uppercase font-bold">Fit</TabsTrigger>
-                    <TabsTrigger value="resume" className="text-[10px] uppercase font-bold">Resume</TabsTrigger>
-                    <TabsTrigger value="outreach" className="text-[10px] uppercase font-bold">Outreach</TabsTrigger>
-                    <TabsTrigger value="cover" className="text-[10px] uppercase font-bold">Cover</TabsTrigger>
-                    <TabsTrigger value="inputs" className="text-[10px] uppercase font-bold">Inputs</TabsTrigger>
+                    <TabsTrigger
+                      value="fit"
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      Fit
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="resume"
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      Resume
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="outreach"
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      Outreach
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="cover"
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      Cover
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="inputs"
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      Inputs
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="fit" className="space-y-4 pt-4">
@@ -204,18 +251,30 @@ export default function History() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <h5 className="text-[10px] font-bold uppercase text-muted-foreground mb-1.5">Matched Skills</h5>
+                        <h5 className="text-[10px] font-bold uppercase text-muted-foreground mb-1.5">
+                          Matched Skills
+                        </h5>
                         <div className="flex flex-wrap">
-                          {entry.result.fit.matched_skills.map((skill, i) => (
-                            <SkillBadge key={i} name={skill} type="matched" />
+                          {entry.result.fit.matched_skills.map((skill) => (
+                            <SkillBadge
+                              key={`matched-${skill}`}
+                              name={skill}
+                              type="matched"
+                            />
                           ))}
                         </div>
                       </div>
                       <div>
-                        <h5 className="text-[10px] font-bold uppercase text-muted-foreground mb-1.5">Missing Skills</h5>
+                        <h5 className="text-[10px] font-bold uppercase text-muted-foreground mb-1.5">
+                          Missing Skills
+                        </h5>
                         <div className="flex flex-wrap">
-                          {entry.result.fit.missing_skills.map((skill, i) => (
-                            <SkillBadge key={i} name={skill} type="missing" />
+                          {entry.result.fit.missing_skills.map((skill) => (
+                            <SkillBadge
+                              key={`missing-${skill}`}
+                              name={skill}
+                              type="missing"
+                            />
                           ))}
                         </div>
                       </div>
@@ -225,7 +284,8 @@ export default function History() {
                       <div className="p-2 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/20 rounded-lg flex items-start gap-2">
                         <AlertTriangle className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
                         <p className="text-[11px] text-yellow-700 dark:text-yellow-400">
-                          <span className="font-bold">Seniority Note:</span> {entry.result.fit.seniority_note}
+                          <span className="font-bold">Seniority Note:</span>{" "}
+                          {entry.result.fit.seniority_note}
                         </p>
                       </div>
                     )}
@@ -235,19 +295,28 @@ export default function History() {
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-xs font-bold uppercase text-muted-foreground">Optimized Summary</h4>
-                          <CopyButton text={entry.result.resume.professional_summary} />
+                          <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                            Optimized Summary
+                          </h4>
+                          <CopyButton
+                            text={entry.result.resume.professional_summary}
+                          />
                         </div>
                         <p className="text-sm text-muted-foreground leading-relaxed italic">
                           {entry.result.resume.professional_summary}
                         </p>
                       </div>
-                      
+
                       <div>
-                        <h4 className="text-[10px] font-bold uppercase text-muted-foreground mb-2">ATS Keywords</h4>
+                        <h4 className="text-[10px] font-bold uppercase text-muted-foreground mb-2">
+                          ATS Keywords
+                        </h4>
                         <div className="flex flex-wrap gap-1.5">
-                          {entry.result.resume.ats_keywords.map((kw, i) => (
-                            <span key={i} className="px-1.5 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded text-[10px] font-mono border border-blue-100 dark:border-blue-900/30">
+                          {entry.result.resume.ats_keywords.map((kw) => (
+                            <span
+                              key={`kw-${kw}`}
+                              className="px-1.5 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded text-[10px] font-mono border border-blue-100 dark:border-blue-900/30"
+                            >
                               {kw}
                             </span>
                           ))}
@@ -255,13 +324,24 @@ export default function History() {
                       </div>
 
                       <div className="space-y-3 pt-2 border-t">
-                        <h4 className="text-xs font-bold uppercase text-muted-foreground">Experience Bullet Improvements</h4>
-                        {Object.entries(entry.result.resume.experience_bullets).map(([role, bullets], i) => (
-                          <div key={i} className="space-y-1.5">
-                            <h5 className="text-[11px] font-semibold text-primary underline underline-offset-4 decoration-primary/20">{role}</h5>
+                        <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                          Experience Bullet Improvements
+                        </h4>
+                        {Object.entries(
+                          entry.result.resume.experience_bullets,
+                        ).map(([role, bullets]) => (
+                          <div key={`role-${role}`} className="space-y-1.5">
+                            <h5 className="text-[11px] font-semibold text-primary underline underline-offset-4 decoration-primary/20">
+                              {role}
+                            </h5>
                             <ul className="list-disc pl-4 space-y-1">
                               {bullets.map((bullet, j) => (
-                                <li key={j} className="text-[11px] text-muted-foreground leading-snug">{bullet}</li>
+                                <li
+                                  key={`bullet-${role}-${j}`}
+                                  className="text-[11px] text-muted-foreground leading-snug"
+                                >
+                                  {bullet}
+                                </li>
                               ))}
                             </ul>
                           </div>
@@ -270,9 +350,16 @@ export default function History() {
 
                       {entry.result.resume.improvement_notes.length > 0 && (
                         <div className="mt-4 p-2 bg-muted/50 rounded-lg text-[10px] space-y-1 border border-dashed">
-                          <p className="font-bold uppercase tracking-tight text-muted-foreground">Strategic Recommendations</p>
-                          {entry.result.resume.improvement_notes.map((note, i) => (
-                            <p key={i} className="text-muted-foreground">• {note}</p>
+                          <p className="font-bold uppercase tracking-tight text-muted-foreground">
+                            Strategic Recommendations
+                          </p>
+                          {entry.result.resume.improvement_notes.map((note) => (
+                            <p
+                              key={`note-${note.substring(0, 20)}`}
+                              className="text-muted-foreground"
+                            >
+                              • {note}
+                            </p>
                           ))}
                         </div>
                       )}
@@ -281,7 +368,9 @@ export default function History() {
 
                   <TabsContent value="outreach" className="space-y-4 pt-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase text-muted-foreground">Cold Outreach Message</h4>
+                      <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                        Cold Outreach Message
+                      </h4>
                       <CopyButton text={entry.result.outreach.message} />
                     </div>
                     <div className="p-3 bg-muted/30 rounded-lg border text-xs whitespace-pre-wrap font-mono leading-relaxed">
@@ -291,15 +380,29 @@ export default function History() {
 
                   <TabsContent value="cover" className="space-y-4 pt-4">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-xs font-bold uppercase text-muted-foreground">Cover Letter</h4>
-                      <CopyButton text={`${entry.result.cover_letter.salutation}\n\n${entry.result.cover_letter.opening_paragraph}\n\n${entry.result.cover_letter.body_paragraph_1}\n\n${entry.result.cover_letter.body_paragraph_2}\n\n${entry.result.cover_letter.closing_paragraph}\n\n${entry.result.cover_letter.sign_off}`} />
+                      <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                        Cover Letter
+                      </h4>
+                      <CopyButton
+                        text={`${entry.result.cover_letter.salutation}\n\n${entry.result.cover_letter.opening_paragraph}\n\n${entry.result.cover_letter.body_paragraph_1}\n\n${entry.result.cover_letter.body_paragraph_2}\n\n${entry.result.cover_letter.closing_paragraph}\n\n${entry.result.cover_letter.sign_off}`}
+                      />
                     </div>
                     <div className="bg-secondary/30 rounded-lg p-4 text-xs whitespace-pre-wrap font-serif leading-relaxed max-h-[300px] overflow-y-auto">
-                      <p className="mb-4">{entry.result.cover_letter.salutation}</p>
-                      <p className="mb-4">{entry.result.cover_letter.opening_paragraph}</p>
-                      <p className="mb-4">{entry.result.cover_letter.body_paragraph_1}</p>
-                      <p className="mb-4">{entry.result.cover_letter.body_paragraph_2}</p>
-                      <p className="mb-4">{entry.result.cover_letter.closing_paragraph}</p>
+                      <p className="mb-4">
+                        {entry.result.cover_letter.salutation}
+                      </p>
+                      <p className="mb-4">
+                        {entry.result.cover_letter.opening_paragraph}
+                      </p>
+                      <p className="mb-4">
+                        {entry.result.cover_letter.body_paragraph_1}
+                      </p>
+                      <p className="mb-4">
+                        {entry.result.cover_letter.body_paragraph_2}
+                      </p>
+                      <p className="mb-4">
+                        {entry.result.cover_letter.closing_paragraph}
+                      </p>
                       <p>{entry.result.cover_letter.sign_off}</p>
                     </div>
                   </TabsContent>
@@ -308,7 +411,9 @@ export default function History() {
                     <div className="space-y-4">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-xs font-bold uppercase text-muted-foreground">Original Resume</h4>
+                          <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                            Original Resume
+                          </h4>
                           <CopyButton text={entry.resume} />
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 text-[10px] font-mono whitespace-pre-wrap max-h-[200px] overflow-y-auto border">
@@ -317,7 +422,9 @@ export default function History() {
                       </div>
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-xs font-bold uppercase text-muted-foreground">Job Description</h4>
+                          <h4 className="text-xs font-bold uppercase text-muted-foreground">
+                            Job Description
+                          </h4>
                           <CopyButton text={entry.job_description} />
                         </div>
                         <div className="bg-muted/30 rounded-lg p-3 text-[10px] font-mono whitespace-pre-wrap max-h-[200px] overflow-y-auto border">

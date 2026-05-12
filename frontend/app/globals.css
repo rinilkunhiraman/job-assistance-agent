@@ -146,20 +146,37 @@
 }
 
 /* Staggered delays */
-.delay-100 { animation-delay: 0.1s; }
-.delay-200 { animation-delay: 0.2s; }
-.delay-300 { animation-delay: 0.3s; }
+.delay-100 {
+  animation-delay: 0.1s;
+}
+.delay-200 {
+  animation-delay: 0.2s;
+}
+.delay-300 {
+  animation-delay: 0.3s;
+}
 
 /* Subtle background pattern */
 .bg-atmosphere {
-  background-image: radial-gradient(ellipse at top, oklch(0.98 0.02 260) 0%, transparent 60%),
-                    radial-gradient(ellipse at bottom right, oklch(0.97 0.02 180) 0%, transparent 50%);
+  background-image:
+    radial-gradient(ellipse at top, oklch(0.98 0.02 260) 0%, transparent 60%),
+    radial-gradient(
+      ellipse at bottom right,
+      oklch(0.97 0.02 180) 0%,
+      transparent 50%
+    );
 }
 
 @keyframes progress-indeterminate {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .animate-progress-indeterminate {
