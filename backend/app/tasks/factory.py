@@ -5,6 +5,7 @@ from app.schemas.pipeline_outputs import (
     ResumeOptimizationOutput,
     OutreachOutput,
     CoverLetterOutput,
+    GapAnalysisOutput,
 )
 
 # ---------------------------------------------------------------------------
@@ -16,7 +17,7 @@ SECTION_SEP = "=" * 60
 def _experience_context(level: str) -> str:
     """
     Return a short calibration note based on the candidate's experience level.
-    Used consistently across all four tasks so tone and positioning are cohesive.
+    Used consistently across all tasks so tone and positioning are cohesive.
     """
     level = (level or "mid").lower()
     mapping = {
@@ -99,11 +100,15 @@ Step 1 — Extract requirements.
 
 Step 2 — Match against resume.
   For each requirement, decide: Matched / Partial / Missing.
+  - Matched: Explicit evidence exists in the resume.
+  - Partial: Candidate has adjacent experience but is missing the specific tool/scale.
+  - Missing: Genuinely absent.
   Base this only on evidence in the resume. Do not infer or assume.
 
-Step 3 — Assess seniority alignment.
-  Does the candidate's experience level match what the role actually requires?
-  State clearly if there is a seniority gap, even if skills match.
+Step 3 — Assess seniority and career gaps.
+  - Does the candidate's experience level match what the role actually requires?
+  - Are there any significant chronological employment breaks (6+ months)?
+  - State clearly if there is a seniority gap or a career gap.
 
 Step 4 — Assign an overall fit rating.
   Choose exactly one: Strong Fit / Moderate Fit / Poor Fit
@@ -118,6 +123,7 @@ Rules:
 - Be realistic, not overly positive
 - A mismatch in seniority level is a gap, even if technical skills overlap
 - Matched keywords must appear explicitly in the resume
+- Partial or Missing keywords must BOTH be added to the 'missing_skills' list
 - Missing keywords must be genuinely absent, not just phrased differently
 """,
         expected_output=(
@@ -128,7 +134,9 @@ Rules:
             "matched_skills (list of strings with resume evidence), "
             "missing_skills (list of strings that are genuinely absent), "
             "seniority_gap (bool), "
-            "seniority_note (one sentence, or null if no gap)."
+            "seniority_note (one sentence, or null if no gap), "
+            "career_gap_detected (bool), "
+            "career_gap_note (one sentence describing the gap, or null)."
         ),
         agent=agent,
         output_json=FitAnalysisOutput,
@@ -139,7 +147,7 @@ Rules:
 def build_resume_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
     company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
-    
+
     fit_note = ""
     if fit_context:
         fit_note = f"""
@@ -232,7 +240,7 @@ def build_outreach_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisO
     experience_note = _experience_context(req.experience_level)
     tone_note = _tone_context(req.tone)
     company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
-    
+
     fit_note = ""
     if fit_context:
         fit_note = f"""
@@ -310,7 +318,7 @@ def build_cover_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutp
     experience_note = _experience_context(req.experience_level)
     tone_note = _tone_context(req.tone)
     company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
-    
+
     fit_note = ""
     if fit_context:
         fit_note = f"""
@@ -419,5 +427,139 @@ Rules:
         ),
         agent=agent,
         output_json=CoverLetterOutput,
+        async_execution=True,
+    )
+
+
+def build_gap_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput) -> Task:
+    """
+    Build the gap analysis task. Requires fit_context — must be called after
+    fit analysis completes. Runs in parallel with resume, outreach, cover letter.
+    """
+    experience_note = _experience_context(req.experience_level)
+
+    # Format missing skills as a numbered list for clarity
+    missing_skills_list = "\n".join(
+        f"  {i + 1}. {skill}" for i, skill in enumerate(fit_context.missing_skills)
+    ) or "  None identified."
+
+    seniority_block = ""
+    if fit_context.seniority_gap and fit_context.seniority_note:
+        seniority_block = f"""
+{SECTION_SEP}
+SENIORITY GAP
+{SECTION_SEP}
+A seniority mismatch was identified: {fit_context.seniority_note}
+Address this directly in seniority_advice — give the candidate concrete positioning
+and growth actions, not generic encouragement.
+"""
+
+    return Task(
+        description=f"""
+You are producing a concrete, prioritised skills gap action plan for a candidate
+who wants to become more competitive for a specific role.
+
+Your output must be specific and actionable. "Take an online course" is not acceptable.
+"Complete the official Kubernetes documentation hands-on tutorial and deploy a
+3-service app locally" is acceptable.
+
+{SECTION_SEP}
+CANDIDATE CONTEXT
+{SECTION_SEP}
+{experience_note}
+Target Role: {req.target_role}
+
+{SECTION_SEP}
+FIT ANALYSIS RESULTS
+{SECTION_SEP}
+Fit Rating: {fit_context.fit_rating}
+Fit Justification: {fit_context.fit_justification}
+Fit Summary: {fit_context.summary}
+
+Matched Skills (do NOT include these in gap analysis):
+{', '.join(fit_context.matched_skills) or 'None'}
+
+Missing Skills (these are your primary input):
+{missing_skills_list}
+{seniority_block}
+
+{SECTION_SEP}
+CAREER GAP CONTEXT
+{SECTION_SEP}
+Career gap detected: {fit_context.career_gap_detected}
+Gap note: {fit_context.career_gap_note or 'None identified.'}
+
+{SECTION_SEP}
+JOB DESCRIPTION
+{SECTION_SEP}
+{req.job_description}
+
+{SECTION_SEP}
+INSTRUCTIONS
+{SECTION_SEP}
+Step 1 — Triage the missing skills by impact.
+  For each missing skill, assess: how much does this gap hurt the candidate's
+  chances for THIS specific role? Rate each High / Medium / Low.
+  High = role cannot proceed without it or it is explicitly required.
+  Medium = mentioned in JD, would strengthen the application.
+  Low = nice to have, unlikely to be a deciding factor.
+
+Step 2 — Identify quick wins.
+  Which gaps can a motivated candidate close in 1–2 weeks?
+  These are typically: a specific tool with good docs, a framework the candidate
+  already has adjacent experience with, or a concept they likely know but haven't
+  formalised. List them explicitly.
+
+Step 3 — For each missing skill listed in 'Missing Skills' above, produce a SkillGapItem.
+  - skill: the gap name exactly as listed above
+  - impact: High / Medium / Low from Step 1
+  - time_to_competency: realistic estimate (be honest — don't undersell hard skills)
+  - resource_type: the most effective format for THIS skill specifically
+    (e.g. "Official docs + build a small project", "Hands-on Kubernetes lab",
+    "Read 'Designing Data-Intensive Applications' chapters 5–7")
+  - concrete_action: one specific thing to do THIS WEEK to start
+
+Step 4 — Build the 30/60/90 day plan.
+  Order actions by impact. High-impact gaps first.
+  Each plan should have 3–5 steps — not a laundry list.
+  Make steps sequential and realistic for someone working a job or job-searching.
+  30-day plan: focus on High-impact gaps only.
+  60-day plan: Medium-impact gaps + deepen High-impact work.
+  90-day plan: Low-impact gaps + portfolio/proof of learning.
+
+Step 5 — Write the overall verdict.
+  1–2 sentences. Is this gap bridgeable in time to apply for this specific role,
+  or should the candidate apply now and close gaps in parallel?
+  Be direct. Do not hedge.
+
+Step 6 — Provide career gap positioning advice.
+  If career_gap_detected is true, provide a 1–2 sentence strategic instruction 
+  on how the candidate should explain this break in their narrative.
+
+Rules:
+- YOU MUST ANALYZE EVERY SKILL LISTED IN THE 'MISSING SKILLS' SECTION ABOVE.
+- Order skill_gaps by impact descending: High first, then Medium, then Low
+- Never recommend a generic resource — always specify format and why it fits this skill
+- time_to_competency must be realistic: distributed systems = months, a CLI tool = days
+- If the 'Missing Skills' section above contains skills, your 'skill_gaps' list MUST NOT be empty.
+- If missing_skills is truly empty, set skill_gaps to [] and note this in overall_verdict
+- Do not repeat matched skills — only analyse what is genuinely missing
+- Calibrate advice to the candidate's experience level: a junior needs more guidance,
+  a senior needs strategic positioning advice more than tutorial recommendations
+""",
+        expected_output=(
+            "A JSON object matching GapAnalysisOutput with fields: "
+            "overall_verdict (1–2 sentence string), "
+            "quick_wins (list of strings — gaps closable in 1–2 weeks, empty list if none), "
+            "skill_gaps (list of SkillGapItem objects ordered by impact descending, each with: "
+            "skill, impact, time_to_competency, resource_type, concrete_action), "
+            "thirty_day_plan (list of 3–5 ordered action step strings), "
+            "sixty_day_plan (list of 3–5 ordered action step strings), "
+            "ninety_day_plan (list of 3–5 ordered action step strings), "
+            "seniority_advice (string with positioning advice if seniority_gap is true, else null), "
+            "career_gap_advice (string with positioning advice if career_gap_detected is true, else null)."
+        ),
+        agent=agent,
+        output_json=GapAnalysisOutput,
         async_execution=True,
     )
