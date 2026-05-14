@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -8,6 +8,7 @@ from app.schemas.pipeline_outputs import (
     ResumeOptimizationOutput,
     OutreachOutput,
     CoverLetterOutput,
+    GapAnalysisOutput,
 )
 
 settings = get_settings()
@@ -86,3 +87,6 @@ class JobResponse(BaseModel):
     resume: ResumeOptimizationOutput
     outreach: OutreachOutput
     cover_letter: CoverLetterOutput
+    gap: Optional[GapAnalysisOutput] = Field(
+        None, description="Skills gap analysis and action plan."
+    )

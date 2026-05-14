@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 
 class FitAnalysisOutput(BaseModel):
+    company_name: Optional[str] = Field(None, description="The name of the hiring company extracted from the JD.")
     fit_rating: str = Field(description="One of: Strong Fit / Moderate Fit / Poor Fit")
     fit_justification: str = Field(description="A single sentence justifying the rating.")
     summary: str = Field(description="3–4 sentences assessing the fit.")
@@ -56,12 +57,3 @@ class GapAnalysisOutput(BaseModel):
     ninety_day_plan: list[str] = Field(description="Ordered list of 3–5 action steps to take in days 61–90.")
     seniority_advice: Optional[str] = Field(None, description="Specific advice on bridging the seniority gap, or null if no seniority gap.")
     career_gap_advice: Optional[str] = Field(None, description="Strategic advice on positioning a career gap/employment break, or null.")
-
-
-
-class JobResponse(BaseModel):
-    fit: FitAnalysisOutput
-    resume: ResumeOptimizationOutput
-    outreach: OutreachOutput
-    cover_letter: CoverLetterOutput
-    gap: Optional[GapAnalysisOutput] = Field(None, description="Skills gap analysis and action plan. None if the task failed.")
