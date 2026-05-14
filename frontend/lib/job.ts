@@ -42,6 +42,8 @@ export type FitAnalysisOutput = {
   missing_skills: string[];
   seniority_gap: boolean;
   seniority_note: string | null;
+  career_gap_detected?: boolean;
+  career_gap_note?: string | null;
 };
 
 export type ResumeOptimizationOutput = {
@@ -69,11 +71,31 @@ export type CoverLetterOutput = {
   word_count: number;
 };
 
+export type SkillGapItem = {
+  skill: string;
+  impact: string;
+  time_to_competency: string;
+  resource_type: string;
+  concrete_action: string;
+};
+
+export type GapAnalysisOutput = {
+  overall_verdict: string;
+  quick_wins: string[];
+  skill_gaps: SkillGapItem[];
+  thirty_day_plan: string[];
+  sixty_day_plan: string[];
+  ninety_day_plan: string[];
+  seniority_advice: string | null;
+  career_gap_advice: string | null;
+};
+
 export type JobResponse = {
   fit: FitAnalysisOutput;
   resume: ResumeOptimizationOutput;
   outreach: OutreachOutput;
   cover_letter: CoverLetterOutput;
+  gap?: GapAnalysisOutput | null;
 };
 
 export type ApiErrorResponse = {

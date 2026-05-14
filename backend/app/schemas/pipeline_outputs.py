@@ -10,6 +10,8 @@ class FitAnalysisOutput(BaseModel):
     missing_skills: list[str] = Field(description="List of strings that are genuinely absent.")
     seniority_gap: bool = Field(description="True if there is a seniority mismatch.")
     seniority_note: Optional[str] = Field(None, description="One sentence explaining the gap, or null.")
+    career_gap_detected: bool = Field(default=False, description="True if there is a significant chronological employment break.")
+    career_gap_note: Optional[str] = Field(None, description="One sentence describing the identified employment break.")
 
 
 class ResumeOptimizationOutput(BaseModel):
@@ -35,3 +37,31 @@ class CoverLetterOutput(BaseModel):
     sign_off: str = Field(description="Sign-off string.")
     company_name: str = Field(description="Company name extracted from JD.")
     word_count: int = Field(description="Integer word count.")
+
+
+class SkillGapItem(BaseModel):
+    skill: str = Field(description="The missing skill or competency.")
+    impact: str = Field(description="One of: High / Medium / Low — how much this gap hurts the application.")
+    time_to_competency: str = Field(description="Realistic estimate to reach working proficiency, e.g. '2–4 weeks', '2–3 months'.")
+    resource_type: str = Field(description="The most effective learning format, e.g. 'Hands-on project', 'Official docs + tutorial', 'Online course'.")
+    concrete_action: str = Field(description="One specific, actionable step the candidate can take this week.")
+
+
+class GapAnalysisOutput(BaseModel):
+    overall_verdict: str = Field(description="1–2 sentences summarising the gap situation and whether it is bridgeable for this role.")
+    quick_wins: list[str] = Field(description="List of gaps closable within 1–2 weeks. Empty list if none.")
+    skill_gaps: list[SkillGapItem] = Field(description="List of SkillGapItem objects, one per missing skill, ordered by impact descending.")
+    thirty_day_plan: list[str] = Field(description="Ordered list of 3–5 action steps to take in the first 30 days.")
+    sixty_day_plan: list[str] = Field(description="Ordered list of 3–5 action steps to take in days 31–60.")
+    ninety_day_plan: list[str] = Field(description="Ordered list of 3–5 action steps to take in days 61–90.")
+    seniority_advice: Optional[str] = Field(None, description="Specific advice on bridging the seniority gap, or null if no seniority gap.")
+    career_gap_advice: Optional[str] = Field(None, description="Strategic advice on positioning a career gap/employment break, or null.")
+
+
+
+class JobResponse(BaseModel):
+    fit: FitAnalysisOutput
+    resume: ResumeOptimizationOutput
+    outreach: OutreachOutput
+    cover_letter: CoverLetterOutput
+    gap: Optional[GapAnalysisOutput] = Field(None, description="Skills gap analysis and action plan. None if the task failed.")
