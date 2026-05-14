@@ -221,7 +221,9 @@ export const useJobStore = create<JobState>()(
             } = get().formValues;
 
             const company_name =
-              provided_company || extractCompanyName(job_description || "");
+              provided_company ||
+              result.fit.company_name ||
+              extractCompanyName(job_description || "");
             const fit_rating = result.fit.fit_rating;
             const historyId = crypto.randomUUID();
 

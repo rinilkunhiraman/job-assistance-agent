@@ -35,6 +35,7 @@ export type JobRequest = z.infer<typeof jobFormSchema>;
 export type FormState = z.infer<typeof jobFormSchema>;
 
 export type FitAnalysisOutput = {
+  company_name: string | null;
   fit_rating: string;
   fit_justification: string;
   summary: string;

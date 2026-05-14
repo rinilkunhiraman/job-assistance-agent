@@ -94,9 +94,10 @@ CANDIDATE RESUME
 {SECTION_SEP}
 INSTRUCTIONS
 {SECTION_SEP}
-Step 1 — Extract requirements.
+Step 1 — Extract requirements and company info.
   Identify the top 8–10 hard requirements from the job description
   (skills, tools, seniority signals, domain knowledge).
+  Also, identify the name of the company hiring for this role.
 
 Step 2 — Match against resume.
   For each requirement, decide: Matched / Partial / Missing.
@@ -128,6 +129,7 @@ Rules:
 """,
         expected_output=(
             "A JSON object matching FitAnalysisOutput with fields: "
+            "company_name (string, the name of the hiring company, or null if not found), "
             "fit_rating (one of: Strong Fit / Moderate Fit / Poor Fit), "
             "fit_justification (one sentence), "
             "summary (3–4 sentences), "
@@ -146,7 +148,10 @@ Rules:
 
 def build_resume_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
-    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
+    
+    # Use manual input if provided, otherwise use AI-extracted name from fit analysis
+    company_name = req.company_name or (fit_context.company_name if fit_context else None) or "[Extract from JD]"
+    company_note = f"Company: {company_name}"
 
     fit_note = ""
     if fit_context:
@@ -239,7 +244,10 @@ Rules:
 def build_outreach_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
     tone_note = _tone_context(req.tone)
-    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
+    
+    # Use manual input if provided, otherwise use AI-extracted name from fit analysis
+    company_name = req.company_name or (fit_context.company_name if fit_context else None) or "[Extract from JD]"
+    company_note = f"Company: {company_name}"
 
     fit_note = ""
     if fit_context:
@@ -317,7 +325,10 @@ Rules:
 def build_cover_task(agent: Agent, req: JobRequest, fit_context: FitAnalysisOutput = None) -> Task:
     experience_note = _experience_context(req.experience_level)
     tone_note = _tone_context(req.tone)
-    company_note = f"Company: {req.company_name}" if req.company_name else "Company: [Extract from JD]"
+    
+    # Use manual input if provided, otherwise use AI-extracted name from fit analysis
+    company_name = req.company_name or (fit_context.company_name if fit_context else None) or "[Extract from JD]"
+    company_note = f"Company: {company_name}"
 
     fit_note = ""
     if fit_context:
