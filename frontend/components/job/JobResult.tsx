@@ -1,6 +1,18 @@
 "use client";
 
-import { Check, Copy, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import {
+  Check,
+  Copy,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Target,
+  BookOpen,
+  TrendingUp,
+  Zap,
+  Briefcase,
+} from "lucide-react";
 import { Component, type ReactNode, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -9,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJobStore } from "@/store/useJobStore";
+import type { SkillGapItem } from "@/lib/job";
 
 class MarkdownErrorBoundary extends Component<
   { children: ReactNode },
@@ -136,11 +149,12 @@ export default function JobResult() {
 
   return (
     <Tabs defaultValue="fit" className="mt-6">
-      <TabsList className="grid w-full grid-cols-4">
+      <TabsList className="grid w-full grid-cols-5">
         <TabsTrigger value="fit">Job Fit</TabsTrigger>
         <TabsTrigger value="resume">Resume</TabsTrigger>
         <TabsTrigger value="outreach">Outreach</TabsTrigger>
         <TabsTrigger value="cover">Cover Letter</TabsTrigger>
+        <TabsTrigger value="gap">Gap Analysis</TabsTrigger>
       </TabsList>
 
       <TabsContent value="fit">
@@ -364,6 +378,209 @@ export default function JobResult() {
               <p>{result.cover_letter.sign_off}</p>
               <p className="font-bold mt-1 text-lg">[Your Name]</p>
             </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="gap">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl font-bold flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              Gap Analysis & Action Plan
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-8">
+            {!result.gap ? (
+              <div className="flex flex-col items-center justify-center py-12 text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                  <AlertTriangle className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="font-medium">Analysis Unavailable</h3>
+                  <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                    No specific skill gaps were identified or analysis failed.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Verdict & Seniority Advice */}
+                <div className="space-y-4">
+                  <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                    <p className="text-sm leading-relaxed font-medium italic">
+                      &ldquo;{result.gap.overall_verdict}&rdquo;
+                    </p>
+                  </div>
+
+                  {result.gap.seniority_advice && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/30 rounded-lg flex gap-3">
+                      <TrendingUp className="w-5 h-5 text-yellow-600 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-yellow-800 dark:text-yellow-500 uppercase tracking-wider">
+                          Seniority Bridge Advice
+                        </p>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                          {result.gap.seniority_advice}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {result.gap.career_gap_advice && (
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-lg flex gap-3">
+                      <Briefcase className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold text-blue-800 dark:text-blue-500 uppercase tracking-wider">
+                          Career Gap Strategy
+                        </p>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          {result.gap.career_gap_advice}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Skill Gaps Table */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                    Identified Skill Gaps
+                  </h4>
+                  <div className="grid gap-4">
+                    {result.gap.skill_gaps.map((gap, i) => (
+                      <div
+                        key={`gap-item-${i}`}
+                        className="p-4 border rounded-xl bg-card hover:shadow-sm transition-shadow space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-lg">
+                              {gap.skill}
+                            </span>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-tighter ${
+                                gap.impact === "High"
+                                  ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                  : gap.impact === "Medium"
+                                    ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                              }`}
+                            >
+                              {gap.impact} Impact
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Clock className="w-3.5 h-3.5" />
+                            {gap.time_to_competency}
+                          </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                              <BookOpen className="w-3 h-3" /> Recommended
+                              Resource
+                            </p>
+                            <p className="font-medium">{gap.resource_type}</p>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-1">
+                              <Zap className="w-3 h-3 text-yellow-500" />{" "}
+                              Immediate Action
+                            </p>
+                            <p className="font-medium">{gap.concrete_action}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Wins */}
+                {result.gap.quick_wins.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground">
+                      Quick Wins (1-2 Weeks)
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {result.gap.quick_wins.map((win, i) => (
+                        <div
+                          key={`win-${i}`}
+                          className="flex items-center gap-2 px-3 py-2 bg-green-50 dark:bg-green-900/10 border border-green-100 dark:border-green-900/30 rounded-lg text-sm text-green-800 dark:text-green-400 font-medium"
+                        >
+                          <Check className="w-4 h-4" />
+                          {win}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* 30-60-90 Plan */}
+                <div className="space-y-4 pt-6 border-t">
+                  <h4 className="text-sm font-bold uppercase tracking-widest text-muted-foreground text-center">
+                    Growth Roadmap
+                  </h4>
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-3">
+                      <div className="text-xs font-bold text-center py-1 bg-muted rounded">
+                        DAYS 1-30
+                      </div>
+                      <ul className="space-y-2">
+                        {result.gap.thirty_day_plan.map((step, i) => (
+                          <li
+                            key={`30-${i}`}
+                            className="text-xs leading-relaxed flex gap-2"
+                          >
+                            <span className="text-primary font-bold">
+                              {i + 1}.
+                            </span>
+                            {step}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-xs font-bold text-center py-1 bg-muted rounded">
+                        DAYS 31-60
+                      </div>
+                      <ul className="space-y-2">
+                        {result.gap.sixty_day_plan.map((step, i) => (
+                          <li
+                            key={`60-${i}`}
+                            className="text-xs leading-relaxed flex gap-2"
+                          >
+                            <span className="text-primary font-bold">
+                              {i + 1}.
+                            </span>
+                            {step}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="text-xs font-bold text-center py-1 bg-muted rounded">
+                        DAYS 61-90
+                      </div>
+                      <ul className="space-y-2">
+                        {result.gap.ninety_day_plan.map((step, i) => (
+                          <li
+                            key={`90-${i}`}
+                            className="text-xs leading-relaxed flex gap-2"
+                          >
+                            <span className="text-primary font-bold">
+                              {i + 1}.
+                            </span>
+                            {step}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </TabsContent>

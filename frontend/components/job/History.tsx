@@ -10,6 +10,11 @@ import {
   AlertTriangle,
   Copy,
   Check,
+  Target,
+  TrendingUp,
+  BookOpen,
+  Zap,
+  Briefcase,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -205,7 +210,7 @@ export default function History() {
             {ui.expandedHistoryId === entry.id && (
               <div className="px-4 pb-4 pt-0 border-t border-border/50 animate-in slide-in-from-top-1 duration-200">
                 <Tabs defaultValue="fit" className="mt-4">
-                  <TabsList className="grid w-full grid-cols-5 h-8">
+                  <TabsList className="grid w-full grid-cols-6 h-8">
                     <TabsTrigger
                       value="fit"
                       className="text-[10px] uppercase font-bold"
@@ -229,6 +234,12 @@ export default function History() {
                       className="text-[10px] uppercase font-bold"
                     >
                       Cover
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="gap"
+                      className="text-[10px] uppercase font-bold"
+                    >
+                      Gap
                     </TabsTrigger>
                     <TabsTrigger
                       value="inputs"
@@ -406,6 +417,97 @@ export default function History() {
                       <p>{entry.result.cover_letter.sign_off}</p>
                     </div>
                   </TabsContent>
+
+                    <TabsContent value="gap" className="space-y-4 pt-4">
+                      {!entry.result.gap ? (
+                        <div className="flex flex-col items-center justify-center py-6 text-center space-y-2">
+                          <AlertTriangle className="h-5 w-5 text-muted-foreground" />
+                          <p className="text-[10px] text-muted-foreground max-w-[150px]">
+                            Gap analysis unavailable for this entry.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                            <p className="text-[11px] leading-relaxed italic text-muted-foreground">
+                              &ldquo;{entry.result.gap.overall_verdict}&rdquo;
+                            </p>
+                          </div>
+
+                          {entry.result.gap.seniority_advice && (
+                            <div className="p-2 bg-yellow-50 dark:bg-yellow-900/10 border border-yellow-100 dark:border-yellow-900/20 rounded-lg flex items-start gap-2">
+                              <TrendingUp className="h-3.5 w-3.5 text-yellow-600 shrink-0 mt-0.5" />
+                              <p className="text-[10px] text-yellow-700 dark:text-yellow-400">
+                                <span className="font-bold">Advice:</span>{" "}
+                                {entry.result.gap.seniority_advice}
+                              </p>
+                            </div>
+                          )}
+
+                          {entry.result.gap.career_gap_advice && (
+                            <div className="p-2 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/20 rounded-lg flex items-start gap-2">
+                              <Briefcase className="h-3.5 w-3.5 text-blue-600 shrink-0 mt-0.5" />
+                              <p className="text-[10px] text-blue-700 dark:text-blue-400">
+                                <span className="font-bold">Gap Strategy:</span>{" "}
+                                {entry.result.gap.career_gap_advice}
+                              </p>
+                            </div>
+                          )}
+
+                          <div className="space-y-2">
+                            <h4 className="text-[10px] font-bold uppercase text-muted-foreground">
+                              Actionable Gaps
+                            </h4>
+                            <div className="grid gap-2">
+                              {entry.result.gap.skill_gaps.map((gap, i) => (
+                                <div
+                                  key={`gap-item-${i}`}
+                                  className="p-2 border rounded-lg bg-card/50 space-y-2"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-bold text-xs">
+                                      {gap.skill}
+                                    </span>
+                                    <span
+                                      className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase ${
+                                        gap.impact === "High"
+                                          ? "bg-red-100 text-red-700"
+                                          : "bg-blue-100 text-blue-700"
+                                      }`}
+                                    >
+                                      {gap.impact}
+                                    </span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-2 text-[9px]">
+                                    <div className="flex items-center gap-1">
+                                      <BookOpen className="w-2.5 h-2.5 text-muted-foreground" />
+                                      {gap.resource_type}
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Zap className="w-2.5 h-2.5 text-yellow-500" />
+                                      {gap.concrete_action}
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {entry.result.gap.quick_wins.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {entry.result.gap.quick_wins.map((win, i) => (
+                                <span
+                                  key={`win-${i}`}
+                                  className="px-1.5 py-0.5 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded text-[9px] border border-green-100 dark:border-green-900/30"
+                                >
+                                  {win}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </TabsContent>
 
                   <TabsContent value="inputs" className="space-y-4 pt-4">
                     <div className="space-y-4">
