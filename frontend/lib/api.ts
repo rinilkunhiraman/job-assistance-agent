@@ -60,18 +60,18 @@ export async function runJobPipelineStream(
 
       buffer += decoder.decode(value, { stream: true });
 
-      // Split by JSON objects if multiple are sent in one chunk or across chunks
-      // This is a simple parser for sequential JSON objects
-      let boundary = buffer.indexOf("}{");
-      while (boundary !== -1) {
-        const part = buffer.slice(0, boundary + 1);
-        buffer = buffer.slice(boundary + 1);
-        handleChunk(part, callbacks);
-        boundary = buffer.indexOf("}{");
+      const parts = buffer.split("\n\n");
+      // Keep the last part in the buffer if it doesn't end with a delimiter
+      buffer = parts.pop() || "";
+
+      for (const part of parts) {
+        if (part.trim()) {
+          handleChunk(part, callbacks);
+        }
       }
     }
 
-    // Final chunk
+    // Final chunk if any
     if (buffer.trim()) {
       handleChunk(buffer, callbacks);
     }

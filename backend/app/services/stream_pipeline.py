@@ -42,14 +42,14 @@ async def run_job_pipeline_stream(
 ) -> AsyncGenerator[str, None]:
     pipeline_started_at = perf_counter()
 
-    yield json.dumps({"type": "progress", "message": "Starting job application pipeline..."})
+    yield json.dumps({"type": "progress", "message": "Starting job application pipeline..."}) + "\n\n"
 
     llm = build_llm()
 
     # -------------------------------------------------------------------------
     # Phase 1 — Fit evaluation (sequential, gates everything else)
     # -------------------------------------------------------------------------
-    yield json.dumps({"type": "progress", "message": "Analysing technical fit and skill gaps..."})
+    yield json.dumps({"type": "progress", "message": "Analysing technical fit and skill gaps..."}) + "\n\n"
 
     fit_evaluator = get_fit_evaluator(llm)
     fit_task = build_fit_task(fit_evaluator, req)
@@ -57,7 +57,7 @@ async def run_job_pipeline_stream(
     fit_raw = execute_single_task(fit_evaluator, fit_task, settings.crew_verbose)
 
     if not fit_raw:
-        yield json.dumps({"type": "error", "message": "Fit analysis failed."})
+        yield json.dumps({"type": "error", "message": "Fit analysis failed."}) + "\n\n"
         return
 
     fit_context = FitAnalysisOutput(**fit_raw)
@@ -65,7 +65,7 @@ async def run_job_pipeline_stream(
         "type": "progress",
         "message": f"Fit analysis complete: {fit_context.fit_rating}. "
                    f"{len(fit_context.missing_skills)} skill gap(s) identified.",
-    })
+    }) + "\n\n"
 
     # -------------------------------------------------------------------------
     # Phase 2 — All remaining tasks in parallel, all informed by fit_context
@@ -73,7 +73,7 @@ async def run_job_pipeline_stream(
     yield json.dumps({
         "type": "progress",
         "message": "Optimising resume, writing outreach materials, and building gap action plan...",
-    })
+    }) + "\n\n"
 
     resume_optimizer = get_resume_optimizer(llm)
     outreach_writer = get_outreach_writer(llm)
@@ -105,19 +105,19 @@ async def run_job_pipeline_stream(
                         yield json.dumps({
                             "type": "progress",
                             "message": "Resume optimisation complete.",
-                        })
+                        }) + "\n\n"
                     elif name == "outreach":
                         results[name] = OutreachOutput(**data)
                         yield json.dumps({
                             "type": "progress",
                             "message": "Outreach message complete.",
-                        })
+                        }) + "\n\n"
                     elif name == "cover_letter":
                         results[name] = CoverLetterOutput(**data)
                         yield json.dumps({
                             "type": "progress",
                             "message": "Cover letter complete.",
-                        })
+                        }) + "\n\n"
                     elif name == "gap":
                         results[name] = GapAnalysisOutput(**data)
                         gap_result: GapAnalysisOutput = results[name]
@@ -132,7 +132,7 @@ async def run_job_pipeline_stream(
                                 f"{high_impact_count} high-impact gap(s), "
                                 f"{quick_win_count} quick win(s) identified."
                             ),
-                        })
+                        }) + "\n\n"
                 else:
                     results[name] = None
                     logger.warning("task_returned_no_data task_name=%s", name)
@@ -187,4 +187,4 @@ async def run_job_pipeline_stream(
         request_id, pipeline_elapsed_ms,
     )
 
-    yield json.dumps({"type": "final_result", "data": response.model_dump()})
+    yield json.dumps({"type": "final_result", "data": response.model_dump()}) + "\n\n"
